@@ -34,7 +34,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { toast } from 'sonner';
 import type { AppStatus, Period } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
-import { Plus, Search, Edit2, Trash2, ExternalLink, Github, LogOut, BarChart3, Package, Clock, Zap, Filter } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ExternalLink, Github, LogOut, BarChart3, Package, Clock, Zap, Filter, Target } from 'lucide-react';
 
 interface AuthCheckResponse {
   authenticated: boolean;
@@ -448,21 +448,37 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-                <Package className="h-6 w-6 text-white" />
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
+                  <rect width="32" height="32" rx="8" fill="#0F172A"/>
+                  <path d="M8 12C8 10.8954 8.89543 10 10 10H22C23.1046 10 24 10.8954 24 12V20C24 21.1046 23.1046 22 22 22H10C8.89543 22 8 21.1046 8 20V12Z" fill="#1E293B"/>
+                  <path d="M12 14H20M12 17H17" stroke="#60A5FA" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="10" cy="10" r="2" fill="#10B981"/>
+                  <circle cx="22" cy="10" r="2" fill="#F59E0B"/>
+                  <circle cx="10" cy="22" r="2" fill="#EF4444"/>
+                  <circle cx="22" cy="22" r="2" fill="#8B5CF6"/>
+                </svg>
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">AppTracker</h1>
                 <p className="text-sm text-slate-600 dark:text-slate-400">Manage your application portfolio</p>
               </div>
             </div>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline" 
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link href="/roadmap">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Roadmap
+                </Button>
+              </Link>
+              <Button 
+                onClick={handleLogout} 
+                variant="outline" 
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            </div>
           </div>
 
           {/* Statistics Cards */}
