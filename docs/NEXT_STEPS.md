@@ -9,11 +9,11 @@
 
 3. **Updates workflow** ✅
    - ✅ Implement update deletion and editing from the timeline.
-   - Add filtering by period (day/week/month) and date range on the dashboard.
-   - Display quick stats (completion percentage, blocker count) per app.
+   - ✅ Add filtering by period (day/week/month) and date range on the dashboard.
+   - ✅ Display quick stats (completion percentage, blocker count) per app.
 
-4. **Deployments view**
-   - Build a section for deployment records with environment, version, and notes.
+4. **Deployments view** ✅
+   - ✅ Build a section for deployment records with environment, version, and notes.
    - Integrate release checkpoints or pull release data from GitHub as an optional enhancement.
 
 5. **Data validation & feedback** ✅

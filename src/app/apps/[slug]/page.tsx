@@ -33,8 +33,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import type { AppStatus, Period } from '@/generated/prisma';
+import type { AppStatus, Period, Environment } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
+import { Rocket, Edit2, Trash2, Plus } from 'lucide-react';
 
 interface AppDetails {
   id: string;
@@ -76,6 +77,21 @@ interface UpdateFormState {
   period: Period;
 }
 
+interface Deployment {
+  id: string;
+  appId: string;
+  environment: Environment;
+  version: string;
+  notes: string | null;
+  deployedAt: string;
+}
+
+interface DeploymentFormState {
+  environment: Environment;
+  version: string;
+  notes: string;
+}
+
 const statusOptions: AppStatus[] = [
   'IDEA',
   'PLANNING',
@@ -89,12 +105,20 @@ const statusOptions: AppStatus[] = [
 
 const periodOptions: Period[] = ['DAY', 'WEEK', 'MONTH'];
 
+const environmentOptions: Environment[] = ['DEV', 'STAGING', 'PROD'];
+
 const createDefaultUpdateForm = (): UpdateFormState => ({
   progress: 0,
   summary: '',
   blockers: '',
   tags: '',
   period: 'WEEK'
+});
+
+const createDefaultDeploymentForm = (): DeploymentFormState => ({
+  environment: 'STAGING',
+  version: '',
+  notes: ''
 });
 
 export default function AppDetail({ params }: { params: Promise<{ slug: string }> }) {
@@ -115,6 +139,12 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
   const [editingUpdate, setEditingUpdate] = useState<Update | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updateToDelete, setUpdateToDelete] = useState<Update | null>(null);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [deploymentForm, setDeploymentForm] = useState<DeploymentFormState>(createDefaultDeploymentForm());
+  const [isAddingDeployment, setIsAddingDeployment] = useState(false);
+  const [editingDeployment, setEditingDeployment] = useState<Deployment | null>(null);
+  const [deleteDeploymentDialogOpen, setDeleteDeploymentDialogOpen] = useState(false);
+  const [deploymentToDelete, setDeploymentToDelete] = useState<Deployment | null>(null);
 
   const fetchUpdates = useCallback(async () => {
     try {
@@ -125,6 +155,18 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
       }
     } catch (error) {
       console.error('Failed to fetch updates:', error);
+    }
+  }, [slug]);
+
+  const fetchDeployments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/apps/${slug}/deployments`);
+      if (response.ok) {
+        const data: Deployment[] = await response.json();
+        setDeployments(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch deployments:', error);
     }
   }, [slug]);
 
@@ -155,7 +197,8 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
   useEffect(() => {
     fetchApp();
     fetchUpdates();
-  }, [fetchApp, fetchUpdates]);
+    fetchDeployments();
+  }, [fetchApp, fetchUpdates, fetchDeployments]);
 
   const handleFormChange =
     <T extends HTMLInputElement | HTMLTextAreaElement>(
@@ -305,6 +348,108 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
   const openDeleteDialog = (update: Update) => {
     setUpdateToDelete(update);
     setDeleteDialogOpen(true);
+  };
+
+  // Deployment handlers
+  const handleDeploymentFormChange =
+    <T extends HTMLInputElement | HTMLTextAreaElement>(
+      key: Exclude<keyof DeploymentFormState, 'environment'>,
+      transformer?: (value: string) => unknown
+    ): ChangeEventHandler<T> =>
+    (event: ChangeEvent<T>) => {
+      const value = transformer ? transformer(event.target.value) : event.target.value;
+      setDeploymentForm((current) => ({ ...current, [key]: value }));
+    };
+
+  const handleEnvironmentChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+    setDeploymentForm((current) => ({
+      ...current,
+      environment: event.target.value as Environment
+    }));
+  };
+
+  const handleAddDeployment = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch(`/api/apps/${slug}/deployments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(deploymentForm)
+      });
+
+      if (response.ok) {
+        setDeploymentForm(createDefaultDeploymentForm());
+        setIsAddingDeployment(false);
+        await fetchDeployments();
+        toast.success('Deployment added successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to add deployment:', error);
+      toast.error('Failed to add deployment');
+    }
+  };
+
+  const handleEditDeployment = (deployment: Deployment) => {
+    setEditingDeployment(deployment);
+    setDeploymentForm({
+      environment: deployment.environment,
+      version: deployment.version,
+      notes: deployment.notes || ''
+    });
+  };
+
+  const handleUpdateDeployment = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingDeployment) return;
+
+    try {
+      const response = await fetch(`/api/apps/${slug}/deployments/${editingDeployment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(deploymentForm)
+      });
+
+      if (response.ok) {
+        setEditingDeployment(null);
+        setDeploymentForm(createDefaultDeploymentForm());
+        await fetchDeployments();
+        toast.success('Deployment updated successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to update deployment:', error);
+      toast.error('Failed to update deployment');
+    }
+  };
+
+  const handleDeleteDeployment = async () => {
+    if (!deploymentToDelete) return;
+
+    try {
+      const response = await fetch(`/api/apps/${slug}/deployments/${deploymentToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setDeploymentToDelete(null);
+        setDeleteDeploymentDialogOpen(false);
+        await fetchDeployments();
+        toast.success('Deployment deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to delete deployment:', error);
+      toast.error('Failed to delete deployment');
+    }
+  };
+
+  const openDeleteDeploymentDialog = (deployment: Deployment) => {
+    setDeploymentToDelete(deployment);
+    setDeleteDeploymentDialogOpen(true);
   };
 
   const getProgressColor = (progress: number) => {
@@ -555,6 +700,71 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
         )}
       </section>
 
+      {/* Deployments Section */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium">Deployments</h2>
+          <Button onClick={() => setIsAddingDeployment(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Deployment
+          </Button>
+        </div>
+
+        {deployments.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Rocket className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-600">No deployments yet. Track your first deployment above!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {deployments.map((deployment) => (
+              <Card key={deployment.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Rocket className="h-4 w-4 text-slate-500" />
+                      <Badge 
+                        variant={deployment.environment === 'PROD' ? 'default' : 'secondary'}
+                        className={deployment.environment === 'PROD' ? 'bg-green-100 text-green-800 border-green-200' : ''}
+                      >
+                        {deployment.environment}
+                      </Badge>
+                      <span className="font-mono text-sm">{deployment.version}</span>
+                      <span className="text-sm text-slate-500">
+                        {new Date(deployment.deployedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditDeployment(deployment)}
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => openDeleteDeploymentDialog(deployment)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                {deployment.notes && (
+                  <CardContent>
+                    <p className="text-sm text-slate-700">{deployment.notes}</p>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
       {(isAddingUpdate || editingUpdate) && (
         <Dialog open={true} onOpenChange={() => {
           setIsAddingUpdate(false);
@@ -666,6 +876,101 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
             </Button>
             <Button variant="destructive" onClick={handleDeleteUpdate}>
               Delete Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deployment Dialogs */}
+      {(isAddingDeployment || editingDeployment) && (
+        <Dialog open={true} onOpenChange={() => {
+          setIsAddingDeployment(false);
+          setEditingDeployment(null);
+          setDeploymentForm(createDefaultDeploymentForm());
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingDeployment ? 'Edit Deployment' : 'Add Deployment'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingDeployment ? 'Update the deployment details below.' : 'Record a new deployment for this application.'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={editingDeployment ? handleUpdateDeployment : handleAddDeployment} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="environment">Environment</Label>
+                <Select value={deploymentForm.environment} onValueChange={(value) => handleEnvironmentChange({ target: { value } } as ChangeEvent<HTMLSelectElement>)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {environmentOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option[0] + option.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="version">Version</Label>
+                <Input
+                  id="version"
+                  placeholder="v1.0.0, 2024.01.15, etc."
+                  value={deploymentForm.version}
+                  onChange={handleDeploymentFormChange('version')}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deployment-notes">Notes</Label>
+                <Textarea
+                  id="deployment-notes"
+                  placeholder="Any notes about this deployment..."
+                  value={deploymentForm.notes}
+                  onChange={handleDeploymentFormChange('notes')}
+                  rows={3}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingDeployment(false);
+                    setEditingDeployment(null);
+                    setDeploymentForm(createDefaultDeploymentForm());
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingDeployment ? 'Update' : 'Add'} Deployment
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <Dialog open={deleteDeploymentDialogOpen} onOpenChange={setDeleteDeploymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the {deploymentToDelete?.environment} deployment version {deploymentToDelete?.version}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDeploymentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteDeployment}>
+              Delete Deployment
             </Button>
           </DialogFooter>
         </DialogContent>
