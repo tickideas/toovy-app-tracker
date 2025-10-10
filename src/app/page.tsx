@@ -9,7 +9,7 @@ import {
   type ChangeEvent,
   type ChangeEventHandler
 } from 'react';
-import type { AppStatus } from '@prisma/client';
+import type { AppStatus } from '@/generated/prisma';
 
 interface AuthCheckResponse {
   authenticated: boolean;
@@ -109,13 +109,20 @@ export default function Home() {
 
   const handleAppFormChange =
     <T extends HTMLInputElement | HTMLTextAreaElement>(
-      key: keyof AppFormState,
+      key: Exclude<keyof AppFormState, 'status'>,
       transform?: (value: string) => string
     ): ChangeEventHandler<T> =>
     (event: ChangeEvent<T>) => {
       const value = transform ? transform(event.target.value) : event.target.value;
       setAppForm((current) => ({ ...current, [key]: value }));
     };
+
+  const handleStatusChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+    setAppForm((current) => ({
+      ...current,
+      status: event.target.value as AppStatus
+    }));
+  };
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -252,12 +259,7 @@ export default function Home() {
             required
             className="border rounded p-2"
           />
-          <select
-            name="status"
-            value={appForm.status}
-            onChange={handleAppFormChange('status', (value) => value as AppStatus)}
-            className="border rounded p-2"
-          >
+          <select name="status" value={appForm.status} onChange={handleStatusChange} className="border rounded p-2">
             {statusOptions.map((option) => (
               <option key={option} value={option}>
                 {option[0] + option.slice(1).toLowerCase()}

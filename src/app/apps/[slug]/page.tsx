@@ -10,7 +10,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { AppStatus } from '@prisma/client';
+import type { AppStatus } from '@/generated/prisma';
 
 interface AppDetails {
   id: string;
@@ -82,13 +82,20 @@ export default function AppDetail({ params }: { params: { slug: string } }) {
 
   const handleFormChange =
     <T extends HTMLInputElement | HTMLTextAreaElement>(
-      key: keyof AppFormState,
+      key: Exclude<keyof AppFormState, 'status'>,
       formatter?: (value: string) => string
     ): ChangeEventHandler<T> =>
     (event: ChangeEvent<T>) => {
       const value = formatter ? formatter(event.target.value) : event.target.value;
       setEditForm((current) => ({ ...current, [key]: value }));
     };
+
+  const handleStatusChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+    setEditForm((current) => ({
+      ...current,
+      status: event.target.value as AppStatus
+    }));
+  };
 
   const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -158,11 +165,7 @@ export default function AppDetail({ params }: { params: { slug: string } }) {
               required
               className="border rounded p-2"
             />
-            <select
-              value={editForm.status}
-              onChange={handleFormChange('status', (value) => value as AppStatus)}
-              className="border rounded p-2"
-            >
+            <select value={editForm.status} onChange={handleStatusChange} className="border rounded p-2">
               {statusOptions.map((option) => (
                 <option key={option} value={option}>
                   {option[0] + option.slice(1).toLowerCase()}

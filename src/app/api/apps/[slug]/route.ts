@@ -59,8 +59,10 @@ async function getOrCreateUser() {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await context.params;
+
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -68,7 +70,7 @@ export async function GET(
   try {
     const user = await getOrCreateUser();
     const app = await prisma.app.findFirst({
-      where: { slug: params.slug, ownerId: user.id },
+      where: { slug, ownerId: user.id },
     });
 
     if (!app) {
@@ -84,8 +86,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await context.params;
+
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -96,7 +100,7 @@ export async function PUT(
 
     const user = await getOrCreateUser();
     const app = await prisma.app.findFirst({
-      where: { slug: params.slug, ownerId: user.id },
+      where: { slug, ownerId: user.id },
     });
 
     if (!app) {
