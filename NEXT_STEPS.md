@@ -24,8 +24,9 @@
    - Add unit tests for server actions (Vitest) and smoke tests with Playwright.
    - Configure CI to run lint/build/test on pull requests.
 
-7. **Production readiness** 🚧
+7. **Production readiness** ✅
    - ✅ Configure PostgreSQL database for production (fixed DATABASE_URL issue)
+   - ✅ Fix Prisma client generation in production builds (added postinstall script)
    - Add Prisma schema for audit trails (who updated what, when) if needed.
    - Document environment variables and deployment configuration.
    - Set up deployment pipeline (Vercel) and monitoring (e.g., Logflare, Sentry).
