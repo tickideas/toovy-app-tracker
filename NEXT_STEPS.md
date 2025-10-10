@@ -1,10 +1,10 @@
 # Next Steps for AppTracker
 
-1. **Authentication polish**
+1. **Authentication polish** ✅
    - Gate routes via middleware once session retrieval is consistent in all actions.
 
-2. **Apps management UX**
-   - Provide edit/delete controls for apps with confirmation dialogs.
+2. **Apps management UX** 🚧
+   - ✅ Provide edit/delete controls for apps with confirmation dialogs.
    - Surface app-level metadata (deployment targets, owners, tags) and allow sorting/search.
 
 3. **Updates workflow**
@@ -16,9 +16,9 @@
    - Build a section for deployment records with environment, version, and notes.
    - Integrate release checkpoints or pull release data from GitHub as an optional enhancement.
 
-5. **Data validation & feedback**
-   - Use form components (shadcn/ui) with inline validation messages.
-   - Communicate create/update success with toast notifications.
+5. **Data validation & feedback** ✅
+   - ✅ Use form components (shadcn/ui) with inline validation messages.
+   - ✅ Communicate create/update success with toast notifications.
 
 6. **Testing & quality**
    - Add unit tests for server actions (Vitest) and smoke tests with Playwright.
