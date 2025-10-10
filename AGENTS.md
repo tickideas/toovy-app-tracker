@@ -68,7 +68,12 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
 - ✅ Next.js 15 compatibility (params Promise handling)
 - ✅ PostgreSQL database configuration for production
  
- ## Git Workflow Essentials
+ ### Git Workflow Requirements (MANDATORY) - DO NOT SKIP
+Before writing ANY code, you MUST:
+1. **Create a feature branch: `git checkout -b feature/[name]`**
+2. **Never work on the main branch directly**
+
+## Git Workflow Essentials
  
  1. Branch from `main` with a descriptive name: `feature/<slug>` or `bugfix/<slug>`.
  2. Run checks locally before committing: `npm run build` and `npm run lint`.

@@ -30,6 +30,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { AppStatus } from '@/generated/prisma';
+import { getStatusBadgeClass } from '@/lib/status';
 
 interface AuthCheckResponse {
   authenticated: boolean;
@@ -428,7 +429,7 @@ export default function Home() {
                   <Link href={`/apps/${app.slug}`} className="font-medium hover:underline">
                     {app.name}
                   </Link>
-                  <span className="text-xs px-2 py-1 rounded bg-gray-100">{app.status}</span>
+                  <span className={getStatusBadgeClass(app.status)}>{app.status}</span>
                 </div>
                 {app.proposedDomain && (
                   <div className="text-xs text-gray-600 mt-1">{app.proposedDomain}</div>

@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { AppStatus } from '@/generated/prisma';
+import { getStatusBadgeClass } from '@/lib/status';
 
 interface AppDetails {
   id: string;
@@ -140,7 +141,10 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{app.name}</h1>
-          <div className="text-sm text-gray-600">Status: {app.status}</div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Status:</span>
+            <span className={getStatusBadgeClass(app.status)}>{app.status}</span>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <button
