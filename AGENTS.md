@@ -1,6 +1,12 @@
- # AppTracker
+# AppTracker
 
- This is an overview of AppTracker. It's a simple app to track the lifecycle and status of many applications with a focus on personal use and simplicity.
+This is an overview of AppTracker. It's a simple app to track the lifecycle and status of many applications with a focus on personal use and simplicity.
+
+## Current Status: ✅ Production Ready
+
+**Deployment**: Live on Vercel at [apptracker.tickideas.org](https://apptracker.tickideas.org)
+**Version**: Production stable with core CRUD functionality
+**Last Updated**: October 2024
 
  ## Core Commands
 
@@ -19,9 +25,14 @@
  ```
  ├─ src/               → Next.js (App Router) app: UI + API routes
  │  ├─ app/            → Application pages and API routes
- │  │  ├─ api/         → API endpoints (auth, apps)
- │  │  ├─ apps/        → Individual app pages
- │  │  └─ page.tsx     → Main dashboard
+ │  │  ├─ api/         → API endpoints (auth, apps, updates)
+ │  │  │   ├─ apps/    → App management endpoints
+ │  │  │   │   └─ [slug]/updates/ → Progress tracking endpoints
+ │  │  │   └─ auth/    → Authentication endpoints
+ │  │  ├─ apps/        → Individual app detail pages
+ │  │  └─ page.tsx     → Main dashboard with search/sort
+ │  ├─ components/     → Reusable UI components
+ │  │  └── ui/         → shadcn/ui components
  │  ├─ lib/            → Shared utilities and Prisma client
  │  └─ generated/      → Prisma client output (gitignored)
  ├─ prisma/            → Prisma schema & migrations
@@ -45,14 +56,33 @@
  - Never introduce new runtime deps without explanation in PR description
 
 ### Architecture Notes
-- **Authentication**: Simple cookie-based sessions with environment variables
+- **Authentication**: Simple cookie-based sessions with environment variables + route middleware protection
 - **State Management**: React hooks (useState, useEffect) for client-side state
 - **API Design**: RESTful endpoints with proper HTTP methods and error handling
 - **Validation**: Zod schemas for input validation and type safety
-- **Database**: Prisma ORM with SQLite for development, Postgres for production
-- **Components**: Client components for interactivity, Tailwind CSS for styling
+- **Database**: Prisma ORM with SQLite for development, Postgres (Prisma Cloud) for production
+- **Components**: Client components for interactivity, shadcn/ui + Tailwind CSS for styling
+- **UI/UX**: Modern form components with toast notifications and confirmation dialogs
+
+### Implemented Features
+- ✅ Full CRUD operations for applications (Create, Read, Update, Delete)
+- ✅ Authentication middleware for route protection
+- ✅ Edit/delete functionality with confirmation dialogs
+- ✅ Modern UI with shadcn/ui components and toast notifications
+- ✅ Production-ready build configuration
+- ✅ Next.js 15 compatibility (params Promise handling)
+- ✅ PostgreSQL database configuration for production
+- ✅ Enhanced apps management with search and sorting capabilities
+- ✅ Comprehensive updates workflow with progress tracking
+- ✅ Timeline-based progress management with blockers and tags
+- ✅ Rich metadata display with card-based responsive UI
  
- ## Git Workflow Essentials
+ ### Git Workflow Requirements (MANDATORY) - DO NOT SKIP
+Before writing ANY code, you MUST:
+1. **Create a feature branch: `git checkout -b feature/[name]`**
+2. **Never work on the main branch directly**
+
+## Git Workflow Essentials
  
  1. Branch from `main` with a descriptive name: `feature/<slug>` or `bugfix/<slug>`.
  2. Run checks locally before committing: `npm run build` and `npm run lint`.

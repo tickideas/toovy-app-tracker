@@ -28,8 +28,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SearchInput } from '@/components/ui/search-input';
 import { toast } from 'sonner';
 import type { AppStatus } from '@/generated/prisma';
+import { getStatusBadgeClass } from '@/lib/status';
 
 interface AuthCheckResponse {
   authenticated: boolean;
@@ -47,6 +51,9 @@ interface AppSummary {
   status: AppStatus;
   proposedDomain: string | null;
   githubUrl: string | null;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AppFormState {
@@ -80,6 +87,10 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [apps, setApps] = useState<AppSummary[]>([]);
+  const [filteredApps, setFilteredApps] = useState<AppSummary[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'updatedAt'>('updatedAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [loginError, setLoginError] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -87,6 +98,34 @@ export default function Home() {
   const [editingApp, setEditingApp] = useState<AppSummary | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appToDelete, setAppToDelete] = useState<AppSummary | null>(null);
+
+  const filterAndSortApps = useCallback((appsList: AppSummary[], query: string, sortKey: 'name' | 'status' | 'updatedAt', order: 'asc' | 'desc') => {
+    const filtered = appsList.filter(app => 
+      app.name.toLowerCase().includes(query.toLowerCase()) ||
+      app.description?.toLowerCase().includes(query.toLowerCase()) ||
+      app.proposedDomain?.toLowerCase().includes(query.toLowerCase())
+    );
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortKey) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case 'updatedAt':
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+      }
+      
+      return order === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, []);
 
   const fetchApps = useCallback(async () => {
     try {
@@ -99,10 +138,11 @@ export default function Home() {
 
       const data: AppSummary[] = await response.json();
       setApps(data);
+      setFilteredApps(filterAndSortApps(data, searchQuery, sortBy, sortOrder));
     } catch (error) {
       console.error('Failed to fetch apps:', error);
     }
-  }, []);
+  }, [searchQuery, sortBy, sortOrder, filterAndSortApps]);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -123,6 +163,10 @@ export default function Home() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    setFilteredApps(filterAndSortApps(apps, searchQuery, sortBy, sortOrder));
+  }, [apps, searchQuery, sortBy, sortOrder, filterAndSortApps]);
 
   const handleAuthFormChange =
     (setter: (value: string) => void): ChangeEventHandler<HTMLInputElement> =>
@@ -417,51 +461,126 @@ export default function Home() {
       </section>
 
       <section>
-        <h2 className="font-medium mb-3">Your apps</h2>
-        {apps.length === 0 ? (
-          <p className="text-sm text-gray-600">No apps yet.</p>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-medium">Your apps</h2>
+          <div className="text-sm text-gray-600">
+            {filteredApps.length} of {apps.length} apps
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <SearchInput
+              placeholder="Search apps..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onSearch={setSearchQuery}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'name' | 'status' | 'updatedAt')}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="updatedAt">Updated</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">A-Z</SelectItem>
+                <SelectItem value="desc">Z-A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {filteredApps.length === 0 ? (
+          <div className="text-center py-8">
+            {apps.length === 0 ? (
+              <p className="text-sm text-gray-600">No apps yet. Create your first application above!</p>
+            ) : (
+              <p className="text-sm text-gray-600">No apps found matching your search.</p>
+            )}
+          </div>
         ) : (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {apps.map((app) => (
-              <li key={app.id} className="border rounded p-4">
-                <div className="flex items-center justify-between">
-                  <Link href={`/apps/${app.slug}`} className="font-medium hover:underline">
-                    {app.name}
-                  </Link>
-                  <span className="text-xs px-2 py-1 rounded bg-gray-100">{app.status}</span>
-                </div>
-                {app.proposedDomain && (
-                  <div className="text-xs text-gray-600 mt-1">{app.proposedDomain}</div>
-                )}
-                {app.githubUrl && (
-                  <a
-                    href={app.githubUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    GitHub
-                  </a>
-                )}
-                <div className="flex space-x-2 mt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditApp(app)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => openDeleteDialog(app)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </li>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredApps.map((app) => (
+              <Card key={app.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">
+                      <Link href={`/apps/${app.slug}`} className="hover:underline">
+                        {app.name}
+                      </Link>
+                    </CardTitle>
+                    <Badge className={getStatusBadgeClass(app.status)}>
+                      {app.status}
+                    </Badge>
+                  </div>
+                  {app.description && (
+                    <CardDescription className="line-clamp-2">
+                      {app.description}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    {app.proposedDomain && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">🌐</span>
+                        <a
+                          href={app.proposedDomain}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {app.proposedDomain.replace(/^https?:\/\//, '')}
+                        </a>
+                      </div>
+                    )}
+                    {app.githubUrl && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">⚡</span>
+                        <a
+                          href={app.githubUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          GitHub
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Updated {new Date(app.updatedAt).toLocaleDateString()}
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditApp(app)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => openDeleteDialog(app)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
