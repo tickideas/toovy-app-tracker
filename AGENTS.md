@@ -1,41 +1,56 @@
  # AppTracker
- 
- This is an overview of AppTracker. It's a simple app to track the lifecycle and deployment status of many applications.
- 
+
+ This is an overview of AppTracker. It's a simple app to track the lifecycle and status of many applications with a focus on personal use and simplicity.
+
  ## Core Commands
- 
+
  - Type-check and lint: `npm run build` (type checks) and `npm run lint`
  - Auto-fix style: `npm run lint -- --fix`
  - Run full test suite: (not configured yet)
  - Run a single test file: (not configured yet)
  - Start dev server: `npm run dev`
  - Build for production: `npm run build` then `npm run start`
- 
+ - Database operations: `npx prisma migrate dev`, `npx prisma studio`
+
  All other scripts should wrap these core tasks as the project grows.
- 
+
  ## Project Layout
- 
+
  ```
- ├─ web/               → Next.js (App Router) app: UI + server actions/API routes
- │  ├─ src/            → Application code
- │  ├─ prisma/         → Prisma schema & migrations
- │  └─ public/         → Static assets
+ ├─ src/               → Next.js (App Router) app: UI + API routes
+ │  ├─ app/            → Application pages and API routes
+ │  │  ├─ api/         → API endpoints (auth, apps)
+ │  │  ├─ apps/        → Individual app pages
+ │  │  └─ page.tsx     → Main dashboard
+ │  ├─ lib/            → Shared utilities and Prisma client
+ │  └─ generated/      → Prisma client output (gitignored)
+ ├─ prisma/            → Prisma schema & migrations
+ └─ public/            → Static assets
  ```
- 
- - Frontend code lives in `web/src`
- - Backend logic lives in server actions and API routes under `web/src`
- - Shared, environment-agnostic helpers belong in `web/src/lib`
+
+ - Frontend code lives in `src/app` with client components using React hooks
+ - Backend logic lives in API routes under `src/app/api`
+ - Shared helpers and database client belong in `src/lib`
+ - Authentication uses simple cookie-based sessions
  
  ## Development Patterns & Constraints
  
- Coding style
+ ### Coding Style
  - TypeScript strict mode; prefer explicit types; avoid `@ts-ignore`.
  - Single quotes, trailing commas, no semicolons.
  - 100-char line limit; tabs for indent (2-space YAML/JSON/MD).
  - Use interfaces for public APIs.
  - Tests first when fixing logic bugs.
  - Visual diff loop for UI tweaks.
- - Never introduce new runtime deps without explanation in PR description.
+ - Never introduce new runtime deps without explanation in PR description
+
+### Architecture Notes
+- **Authentication**: Simple cookie-based sessions with environment variables
+- **State Management**: React hooks (useState, useEffect) for client-side state
+- **API Design**: RESTful endpoints with proper HTTP methods and error handling
+- **Validation**: Zod schemas for input validation and type safety
+- **Database**: Prisma ORM with SQLite for development, Postgres for production
+- **Components**: Client components for interactivity, Tailwind CSS for styling
  
  ## Git Workflow Essentials
  
