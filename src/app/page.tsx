@@ -32,9 +32,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/search-input';
 import { toast } from 'sonner';
-import type { AppStatus } from '@/generated/prisma';
+import type { AppStatus, Period } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
-import { Plus, Search, Edit2, Trash2, ExternalLink, Github, LogOut, BarChart3, Package, Clock, Zap } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ExternalLink, Github, LogOut, BarChart3, Package, Clock, Zap, Filter } from 'lucide-react';
 
 interface AuthCheckResponse {
   authenticated: boolean;
@@ -65,6 +65,17 @@ interface AppFormState {
   status: AppStatus;
 }
 
+interface AppStats {
+  id: string;
+  name: string;
+  slug: string;
+  status: AppStatus;
+  completionPercentage: number;
+  blockerCount: number;
+  lastUpdateDate: string | null;
+  updateCount: number;
+}
+
 const statusOptions: AppStatus[] = [
   'IDEA',
   'PLANNING',
@@ -75,6 +86,8 @@ const statusOptions: AppStatus[] = [
   'PAUSED',
   'ARCHIVED'
 ];
+
+const periodOptions: Period[] = ['DAY', 'WEEK', 'MONTH'];
 
 const createDefaultFormState = (): AppFormState => ({
   name: '',
@@ -101,6 +114,11 @@ export default function Home() {
   const [appToDelete, setAppToDelete] = useState<AppSummary | null>(null);
   const [createEditModalOpen, setCreateEditModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<AppStatus | 'ALL'>('ALL');
+  const [periodFilter, setPeriodFilter] = useState<Period | 'ALL'>('ALL');
+  const [dateRangeStart, setDateRangeStart] = useState('');
+  const [dateRangeEnd, setDateRangeEnd] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [appStats, setAppStats] = useState<AppStats[]>([]);
 
   const filterAndSortApps = useCallback((appsList: AppSummary[], query: string, sortKey: 'name' | 'status' | 'updatedAt', order: 'asc' | 'desc', status: AppStatus | 'ALL') => {
     const filtered = appsList.filter(app => 
@@ -131,6 +149,27 @@ export default function Home() {
     return filtered;
   }, []);
 
+  const fetchAppStats = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (periodFilter !== 'ALL') params.append('period', periodFilter);
+      if (dateRangeStart) params.append('startDate', dateRangeStart);
+      if (dateRangeEnd) params.append('endDate', dateRangeEnd);
+      
+      const response = await fetch(`/api/apps/stats?${params.toString()}`);
+
+      if (!response.ok) {
+        console.error('App stats request failed with status', response.status);
+        return;
+      }
+
+      const data: AppStats[] = await response.json();
+      setAppStats(data);
+    } catch (error) {
+      console.error('Failed to fetch app stats:', error);
+    }
+  }, [periodFilter, dateRangeStart, dateRangeEnd]);
+
   const fetchApps = useCallback(async () => {
     try {
       const response = await fetch('/api/apps');
@@ -143,10 +182,11 @@ export default function Home() {
       const data: AppSummary[] = await response.json();
       setApps(data);
       setFilteredApps(filterAndSortApps(data, searchQuery, sortBy, sortOrder, statusFilter));
+      await fetchAppStats();
     } catch (error) {
       console.error('Failed to fetch apps:', error);
     }
-  }, [searchQuery, sortBy, sortOrder, statusFilter, filterAndSortApps]);
+  }, [searchQuery, sortBy, sortOrder, statusFilter, filterAndSortApps, fetchAppStats]);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -171,6 +211,12 @@ export default function Home() {
   useEffect(() => {
     setFilteredApps(filterAndSortApps(apps, searchQuery, sortBy, sortOrder, statusFilter));
   }, [apps, searchQuery, sortBy, sortOrder, statusFilter, filterAndSortApps]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAppStats();
+    }
+  }, [periodFilter, dateRangeStart, dateRangeEnd, isAuthenticated, fetchAppStats]);
 
   const handleAuthFormChange =
     (setter: (value: string) => void): ChangeEventHandler<HTMLInputElement> =>
@@ -534,8 +580,74 @@ export default function Home() {
                   <SelectItem value="desc">Z-A</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+              </Button>
             </div>
           </div>
+
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+              <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Advanced Filters</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="period-filter" className="text-sm">Update Period</Label>
+                  <Select value={periodFilter} onValueChange={(value) => setPeriodFilter(value as Period | 'ALL')}>
+                    <SelectTrigger id="period-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Periods</SelectItem>
+                      {periodOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option[0] + option.slice(1).toLowerCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date-start" className="text-sm">Start Date</Label>
+                  <Input
+                    id="date-start"
+                    type="date"
+                    value={dateRangeStart}
+                    onChange={(e) => setDateRangeStart(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date-end" className="text-sm">End Date</Label>
+                  <Input
+                    id="date-end"
+                    type="date"
+                    value={dateRangeEnd}
+                    onChange={(e) => setDateRangeEnd(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setPeriodFilter('ALL');
+                    setDateRangeStart('');
+                    setDateRangeEnd('');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
 
       {/* App Grid or Empty State */}
@@ -621,6 +733,55 @@ export default function Home() {
                       </a>
                     )}
                   </div>
+                  
+                  {/* Quick Stats */}
+                  {(() => {
+                    const stats = appStats.find(s => s.id === app.id);
+                    if (!stats) return null;
+                    
+                    return (
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Progress</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  stats.completionPercentage >= 80 ? 'bg-green-500' :
+                                  stats.completionPercentage >= 50 ? 'bg-yellow-500' :
+                                  stats.completionPercentage >= 20 ? 'bg-orange-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${stats.completionPercentage}%` }}
+                              />
+                            </div>
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">
+                              {stats.completionPercentage}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Updates</span>
+                          <span className="text-slate-700 dark:text-slate-300">{stats.updateCount}</span>
+                        </div>
+                        {stats.blockerCount > 0 && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500">Blockers</span>
+                            <span className="text-orange-600 dark:text-orange-400 font-medium">
+                              {stats.blockerCount}
+                            </span>
+                          </div>
+                        )}
+                        {stats.lastUpdateDate && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500">Last Update</span>
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {new Date(stats.lastUpdateDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
                     <span className="text-xs text-slate-500">
