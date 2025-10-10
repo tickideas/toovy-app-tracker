@@ -31,14 +31,14 @@
    - Add Prisma schema for audit trails (who updated what, when) if needed.
 
 8. **Future enhancements**
-   - Roadmap view aggregating all apps with status timelines.
-   - Team sharing (invite users, multi-tenant support).
-   - GitHub API integration for repo insights (open issues, last commit).
+   - ✅ Roadmap view aggregating all apps with status timelines.
+   - ✅ Public sharing with client feedback and task tracking.
+   - ✅ GitHub API integration for repo insights (open issues, last commit).
    - Analytics dashboard with completion metrics across all apps.
    - Mobile app version for on-the-go progress tracking.
    - Automated progress detection via GitHub commit analysis.
 
-9. **Recently Completed (October 2024)**
+9. **Recently Completed (October 2025)**
    - ✅ Enhanced apps management with search and real-time filtering
    - ✅ Smart sorting by name, status, and last updated date
    - ✅ Comprehensive updates workflow with timeline tracking
@@ -47,5 +47,8 @@
    - ✅ Blocker tracking for identifying impediments
    - ✅ Modern responsive card-based UI design
    - ✅ Full CRUD operations for progress updates
+   - ✅ **Roadmap view with timeline, kanban, and metrics modes**
+   - ✅ **GitHub API integration with repo insights (stars, commits, issues)**
+   - ✅ **Public sharing feature with client feedback and task tracking (with analytics, rate limiting, and UX enhancements)**
 
 Use this list as a living plan—check items off as they are implemented and append new opportunities discovered during testing.

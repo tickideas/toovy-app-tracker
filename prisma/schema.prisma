@@ -35,6 +35,13 @@ enum Environment {
   PROD
 }
 
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
 // Models
 model User {
   id             String    @id @default(cuid())
@@ -61,6 +68,7 @@ model App {
   owner          User         @relation(fields: [ownerId], references: [id])
   updates        Update[]
   deployments    Deployment[]
+  shareLinks     ShareLink[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
@@ -126,4 +134,52 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Public sharing models
+model ShareLink {
+  id            String   @id @default(cuid())
+  code          String   @unique // e.g., "abc123xyz"
+  appId         String
+  app           App      @relation(fields: [appId], references: [id])
+  permissions   Json     // { view: true, comment: boolean, create_tasks: boolean }
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime?
+  lastAccessedAt DateTime?
+  accessCount   Int      @default(0)
+  feedbacks     Feedback[]
+  clientTasks   ClientTask[]
+}
+
+model Feedback {
+  id         String   @id @default(cuid())
+  shareCode  String
+  shareLink  ShareLink @relation(fields: [shareCode], references: [code])
+  clientName String?  // Optional name for identification
+  message    String
+  createdAt  DateTime @default(now())
+}
+
+model ClientTask {
+  id          String     @id @default(cuid())
+  shareCode   String
+  shareLink   ShareLink  @relation(fields: [shareCode], references: [code])
+  title       String
+  description String
+  status      TaskStatus @default(PENDING)
+  clientName  String?    // Optional name for identification
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  completion  TaskCompletion?
+}
+
+model TaskCompletion {
+  id          String     @id @default(cuid())
+  taskId      String     @unique
+  task        ClientTask  @relation(fields: [taskId], references: [id])
+  completedBy String     // Admin name/identifier
+  completedAt DateTime   @default(now())
+  feedback    String     // Admin's response about completion
+  notes       String?    // Additional details
 }

@@ -36,6 +36,8 @@ import { toast } from 'sonner';
 import type { AppStatus, Period, Environment } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
 import { Rocket, Edit2, Trash2, Plus, Github, ExternalLink, GitBranch, AlertCircle } from 'lucide-react';
+import ShareLinkManager from '@/components/share/ShareLinkManager';
+import TaskManager from '@/components/tasks/TaskManager';
 
 interface GitHubInsights {
   repo: {
@@ -1206,6 +1208,12 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Public Sharing Section */}
+      <ShareLinkManager appSlug={slug} />
+
+      {/* Client Tasks Management */}
+      <TaskManager appSlug={slug} />
     </div>
   );
 }
