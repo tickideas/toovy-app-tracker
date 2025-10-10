@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
+    console.error('Failed to handle login request', error);
     return NextResponse.json(
       { success: false, error: 'Invalid request' },
       { status: 400 }

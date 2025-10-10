@@ -1,76 +1,145 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import prisma from "@/lib/prisma";
-import { createApp } from "@/actions/apps";
+import Link from 'next/link';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  type FormEvent,
+  type ChangeEvent,
+  type ChangeEventHandler
+} from 'react';
+import type { AppStatus } from '@prisma/client';
+
+interface AuthCheckResponse {
+  authenticated: boolean;
+}
+
+interface LoginResponse {
+  success: boolean;
+  error?: string;
+}
+
+interface AppSummary {
+  id: string;
+  name: string;
+  slug: string;
+  status: AppStatus;
+  proposedDomain: string | null;
+  githubUrl: string | null;
+}
+
+interface AppFormState {
+  name: string;
+  description: string;
+  proposedDomain: string;
+  githubUrl: string;
+  status: AppStatus;
+}
+
+const statusOptions: AppStatus[] = [
+  'IDEA',
+  'PLANNING',
+  'BUILDING',
+  'TESTING',
+  'DEPLOYING',
+  'LIVE',
+  'PAUSED',
+  'ARCHIVED'
+];
+
+const createDefaultFormState = (): AppFormState => ({
+  name: '',
+  description: '',
+  proposedDomain: '',
+  githubUrl: '',
+  status: 'PLANNING'
+});
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [apps, setApps] = useState([]);
-  const [loginError, setLoginError] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [appForm, setAppForm] = useState({
-    name: "",
-    description: "",
-    proposedDomain: "",
-    githubUrl: "",
-    status: "PLANNING"
-  });
+  const [apps, setApps] = useState<AppSummary[]>([]);
+  const [loginError, setLoginError] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [appForm, setAppForm] = useState<AppFormState>(createDefaultFormState);
 
-  useEffect(() => {
-    checkAuth();
+  const fetchApps = useCallback(async () => {
+    try {
+      const response = await fetch('/api/apps');
+
+      if (!response.ok) {
+        console.error('Apps request failed with status', response.status);
+        return;
+      }
+
+      const data: AppSummary[] = await response.json();
+      setApps(data);
+    } catch (error) {
+      console.error('Failed to fetch apps:', error);
+    }
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/check');
-      const data = await response.json();
+      const data: AuthCheckResponse = await response.json();
       setIsAuthenticated(data.authenticated);
+
       if (data.authenticated) {
-        fetchApps();
+        await fetchApps();
       }
     } catch (error) {
       console.error('Auth check failed:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchApps]);
 
-  const fetchApps = async () => {
-    try {
-      const response = await fetch('/api/apps');
-      const data = await response.json();
-      setApps(data);
-    } catch (error) {
-      console.error('Failed to fetch apps:', error);
-    }
-  };
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError("");
+  const handleAuthFormChange =
+    (setter: (value: string) => void): ChangeEventHandler<HTMLInputElement> =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setter(event.target.value);
+    };
+
+  const handleAppFormChange =
+    <T extends HTMLInputElement | HTMLTextAreaElement>(
+      key: keyof AppFormState,
+      transform?: (value: string) => string
+    ): ChangeEventHandler<T> =>
+    (event: ChangeEvent<T>) => {
+      const value = transform ? transform(event.target.value) : event.target.value;
+      setAppForm((current) => ({ ...current, [key]: value }));
+    };
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoginError('');
 
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password })
       });
 
-      const data = await response.json();
+      const data: LoginResponse = await response.json();
 
       if (data.success) {
         setIsAuthenticated(true);
         await fetchApps();
       } else {
-        setLoginError(data.error || 'Login failed');
+        setLoginError(data.error ?? 'Login failed');
       }
     } catch (error) {
+      console.error('Login failed:', error);
       setLoginError('Login failed');
     }
   };
@@ -85,25 +154,20 @@ export default function Home() {
     }
   };
 
-  const handleAddApp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddApp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     try {
       const response = await fetch('/api/apps', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(appForm),
+        body: JSON.stringify(appForm)
       });
 
       if (response.ok) {
-        setAppForm({
-          name: "",
-          description: "",
-          proposedDomain: "",
-          githubUrl: "",
-          status: "PLANNING"
-        });
+        setAppForm(createDefaultFormState());
         await fetchApps();
       }
     } catch (error) {
@@ -121,7 +185,6 @@ export default function Home() {
     );
   }
 
-  // If user is not authenticated, show sign-in UI
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto max-w-5xl p-6 space-y-8">
@@ -140,7 +203,7 @@ export default function Home() {
                   type="text"
                   placeholder="Username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={handleAuthFormChange(setUsername)}
                   className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -150,14 +213,12 @@ export default function Home() {
                   type="password"
                   placeholder="Password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handleAuthFormChange(setPassword)}
                   className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
-              {loginError && (
-                <div className="text-red-600 text-sm">{loginError}</div>
-              )}
+              {loginError && <div className="text-red-600 text-sm">{loginError}</div>}
               <button
                 type="submit"
                 className="w-full px-6 py-3 rounded bg-gray-900 text-white hover:bg-gray-800"
@@ -175,10 +236,7 @@ export default function Home() {
     <div className="container mx-auto max-w-5xl p-6 space-y-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">AppTracker</h1>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-gray-600 hover:underline"
-        >
+        <button onClick={handleLogout} className="text-sm text-gray-600 hover:underline">
           Sign out
         </button>
       </header>
@@ -190,44 +248,41 @@ export default function Home() {
             name="name"
             placeholder="Name"
             value={appForm.name}
-            onChange={(e) => setAppForm({ ...appForm, name: e.target.value })}
+            onChange={handleAppFormChange('name')}
             required
             className="border rounded p-2"
           />
           <select
             name="status"
             value={appForm.status}
-            onChange={(e) => setAppForm({ ...appForm, status: e.target.value })}
+            onChange={handleAppFormChange('status', (value) => value as AppStatus)}
             className="border rounded p-2"
           >
-            <option value="IDEA">Idea</option>
-            <option value="PLANNING">Planning</option>
-            <option value="BUILDING">Building</option>
-            <option value="TESTING">Testing</option>
-            <option value="DEPLOYING">Deploying</option>
-            <option value="LIVE">Live</option>
-            <option value="PAUSED">Paused</option>
-            <option value="ARCHIVED">Archived</option>
+            {statusOptions.map((option) => (
+              <option key={option} value={option}>
+                {option[0] + option.slice(1).toLowerCase()}
+              </option>
+            ))}
           </select>
           <input
             name="proposedDomain"
             placeholder="Proposed domain (https://...)"
             value={appForm.proposedDomain}
-            onChange={(e) => setAppForm({ ...appForm, proposedDomain: e.target.value })}
+            onChange={handleAppFormChange('proposedDomain')}
             className="border rounded p-2 col-span-1 md:col-span-2"
           />
           <input
             name="githubUrl"
             placeholder="GitHub URL (https://github.com/...)"
             value={appForm.githubUrl}
-            onChange={(e) => setAppForm({ ...appForm, githubUrl: e.target.value })}
+            onChange={handleAppFormChange('githubUrl')}
             className="border rounded p-2 col-span-1 md:col-span-2"
           />
           <textarea
             name="description"
             placeholder="Description"
             value={appForm.description}
-            onChange={(e) => setAppForm({ ...appForm, description: e.target.value })}
+            onChange={handleAppFormChange('description')}
             className="border rounded p-2 col-span-1 md:col-span-2"
           />
           <div className="col-span-1 md:col-span-2 flex justify-end">
@@ -256,7 +311,12 @@ export default function Home() {
                   <div className="text-xs text-gray-600 mt-1">{app.proposedDomain}</div>
                 )}
                 {app.githubUrl && (
-                  <a href={app.githubUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                  <a
+                    href={app.githubUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
                     GitHub
                   </a>
                 )}
