@@ -17,6 +17,11 @@ The application is fully functional and deployed to Vercel with PostgreSQL datab
 - ✅ **Edit/Delete**: In-place editing with confirmation dialogs for safety
 - ✅ **Database**: Prisma ORM with SQLite (dev) / PostgreSQL (production)
 - ✅ **Production Ready**: Optimized builds with proper error handling
+- 🔍 **Enhanced Search**: Search apps by name, description, or domain with real-time filtering
+- 📊 **Smart Sorting**: Sort applications by name, status, or last updated date
+- 📈 **Progress Tracking**: Comprehensive updates workflow with timeline management
+- 🏷️ **Rich Metadata**: Tag system, blocker tracking, and progress visualization
+- 📱 **Responsive Design**: Modern card-based UI that works on all devices
 
 ## Tech Stack
 
@@ -75,8 +80,10 @@ The application is fully functional and deployed to Vercel with PostgreSQL datab
 ## Usage
 
 - **Create Apps**: Fill in the form on the main dashboard to add new applications
+- **Search & Sort**: Use the search bar and sorting controls to find and organize apps
 - **Edit Apps**: Click on any app to view its detail page, then click "Edit" to modify
-- **Track Status**: Update app status through the development lifecycle
+- **Track Progress**: Add detailed progress updates with completion percentages, blockers, and tags
+- **Timeline Management**: View chronological progress history with visual progress bars
 - **Manage Details**: Add descriptions, domain links, and GitHub repositories
 
 ## Scripts
@@ -125,19 +132,19 @@ To deploy a new instance:
 
 Based on the [NEXT_STEPS.md](./NEXT_STEPS.md) roadmap:
 
-- **Updates workflow**: Timeline tracking with progress updates and filtering
 - **Deployments view**: Release management and version tracking
 - **Testing & Quality**: Unit tests with Vitest and E2E tests with Playwright
-- **Enhanced Search**: Sorting, filtering, and metadata management
+- **Enhanced Filtering**: Advanced filtering by period and date ranges
 - **Team Features**: Multi-tenant support and user roles
 - **GitHub Integration**: API integration for repository insights
+- **Analytics Dashboard**: Quick stats and completion metrics across apps
 
 ### Current Limitations
 
 - Single user system (perfect for personal use)
-- Manual status updates (no automated progress tracking)
-- Basic filtering and search capabilities
-- No mobile-specific optimizations
+- Manual progress updates (no automated tracking)
+- No deployment tracking yet
+- No mobile app version
 
 ---
 
@@ -150,6 +157,8 @@ Based on the [NEXT_STEPS.md](./NEXT_STEPS.md) roadmap:
 3. **Production Fixes** - Database configuration and build optimization
 4. **Next.js 15 Compatibility** - Params Promise handling and middleware protection
 5. **Production Deployment** - Successful Vercel deployment with PostgreSQL
+6. **Enhanced Management** - Search, sorting, and improved app discovery
+7. **Progress Tracking** - Comprehensive updates workflow with timeline management
 
 ### Technical Challenges Solved
 

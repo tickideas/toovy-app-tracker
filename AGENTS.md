@@ -25,9 +25,14 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
  ```
  ├─ src/               → Next.js (App Router) app: UI + API routes
  │  ├─ app/            → Application pages and API routes
- │  │  ├─ api/         → API endpoints (auth, apps)
- │  │  ├─ apps/        → Individual app pages
- │  │  └─ page.tsx     → Main dashboard
+ │  │  ├─ api/         → API endpoints (auth, apps, updates)
+ │  │  │   ├─ apps/    → App management endpoints
+ │  │  │   │   └─ [slug]/updates/ → Progress tracking endpoints
+ │  │  │   └─ auth/    → Authentication endpoints
+ │  │  ├─ apps/        → Individual app detail pages
+ │  │  └─ page.tsx     → Main dashboard with search/sort
+ │  ├─ components/     → Reusable UI components
+ │  │  └── ui/         → shadcn/ui components
  │  ├─ lib/            → Shared utilities and Prisma client
  │  └─ generated/      → Prisma client output (gitignored)
  ├─ prisma/            → Prisma schema & migrations
@@ -67,6 +72,10 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
 - ✅ Production-ready build configuration
 - ✅ Next.js 15 compatibility (params Promise handling)
 - ✅ PostgreSQL database configuration for production
+- ✅ Enhanced apps management with search and sorting capabilities
+- ✅ Comprehensive updates workflow with progress tracking
+- ✅ Timeline-based progress management with blockers and tags
+- ✅ Rich metadata display with card-based responsive UI
  
  ### Git Workflow Requirements (MANDATORY) - DO NOT SKIP
 Before writing ANY code, you MUST:
