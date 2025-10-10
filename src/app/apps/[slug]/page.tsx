@@ -35,7 +35,52 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import type { AppStatus, Period, Environment } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
-import { Rocket, Edit2, Trash2, Plus } from 'lucide-react';
+import { Rocket, Edit2, Trash2, Plus, Github, ExternalLink, GitBranch, AlertCircle } from 'lucide-react';
+
+interface GitHubInsights {
+  repo: {
+    id: number;
+    name: string;
+    full_name: string;
+    description: string | null;
+    html_url: string;
+    stargazers_count: number;
+    forks_count: number;
+    language: string | null;
+    open_issues_count: number;
+    created_at: string;
+    updated_at: string;
+    pushed_at: string;
+    default_branch: string;
+  } | null;
+  recentCommits: Array<{
+    sha: string;
+    commit: {
+      author: {
+        name: string;
+        email: string;
+        date: string;
+      };
+      message: string;
+    };
+    html_url: string;
+  }>;
+  openIssues: Array<{
+    id: number;
+    number: number;
+    title: string;
+    state: 'open' | 'closed';
+    html_url: string;
+    created_at: string;
+    updated_at: string;
+    user: {
+      login: string;
+      html_url: string;
+    };
+  }>;
+  lastCommitDate: string | null;
+  commitCount: number;
+}
 
 interface AppDetails {
   id: string;
@@ -145,6 +190,8 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
   const [editingDeployment, setEditingDeployment] = useState<Deployment | null>(null);
   const [deleteDeploymentDialogOpen, setDeleteDeploymentDialogOpen] = useState(false);
   const [deploymentToDelete, setDeploymentToDelete] = useState<Deployment | null>(null);
+  const [githubInsights, setGithubInsights] = useState<GitHubInsights | null>(null);
+  const [isGithubLoading, setIsGithubLoading] = useState(false);
 
   const fetchUpdates = useCallback(async () => {
     try {
@@ -157,6 +204,23 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
       console.error('Failed to fetch updates:', error);
     }
   }, [slug]);
+
+  const fetchGithubInsights = useCallback(async () => {
+    if (!app?.githubUrl) return;
+    
+    setIsGithubLoading(true);
+    try {
+      const response = await fetch(`/api/apps/${slug}/github`);
+      if (response.ok) {
+        const data: GitHubInsights = await response.json();
+        setGithubInsights(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch GitHub insights:', error);
+    } finally {
+      setIsGithubLoading(false);
+    }
+  }, [slug, app?.githubUrl]);
 
   const fetchDeployments = useCallback(async () => {
     try {
@@ -199,6 +263,12 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
     fetchUpdates();
     fetchDeployments();
   }, [fetchApp, fetchUpdates, fetchDeployments]);
+
+  useEffect(() => {
+    if (app?.githubUrl) {
+      fetchGithubInsights();
+    }
+  }, [app?.githubUrl, fetchGithubInsights]);
 
   const handleFormChange =
     <T extends HTMLInputElement | HTMLTextAreaElement>(
@@ -610,6 +680,167 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
               Created {new Date(app.createdAt).toLocaleDateString()} • 
               Updated {new Date(app.updatedAt).toLocaleDateString()}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* GitHub Insights Section */}
+      {app.githubUrl && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Github className="h-5 w-5" />
+                <CardTitle>GitHub Insights</CardTitle>
+              </div>
+              {githubInsights?.repo && (
+                <a
+                  href={githubInsights.repo.html_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 hover:text-blue-700 flex items-center gap-1 text-sm"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View Repository
+                </a>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isGithubLoading ? (
+              <div className="text-center py-4">
+                <div className="text-sm text-gray-500">Loading GitHub insights...</div>
+              </div>
+            ) : githubInsights?.repo ? (
+              <div className="space-y-6">
+                {/* Repository Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {githubInsights.repo.stargazers_count}
+                    </div>
+                    <div className="text-sm text-gray-500">Stars</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {githubInsights.repo.forks_count}
+                    </div>
+                    <div className="text-sm text-gray-500">Forks</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {githubInsights.repo.open_issues_count}
+                    </div>
+                    <div className="text-sm text-gray-500">Open Issues</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {githubInsights.repo.language || 'N/A'}
+                    </div>
+                    <div className="text-sm text-gray-500">Language</div>
+                  </div>
+                </div>
+
+                {/* Last Commit Info */}
+                {githubInsights.lastCommitDate && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                      <GitBranch className="h-4 w-4" />
+                      Recent Activity
+                    </h4>
+                    <div className="text-sm text-gray-600">
+                      Last commit: {new Date(githubInsights.lastCommitDate).toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Commits */}
+                {githubInsights.recentCommits.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-sm mb-3">Recent Commits</h4>
+                    <div className="space-y-3">
+                      {githubInsights.recentCommits.slice(0, 3).map((commit) => (
+                        <div key={commit.sha} className="flex items-start gap-3 text-sm">
+                          <div className="flex-shrink-0">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5"></div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 truncate">
+                                {commit.commit.author.name}
+                              </span>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-gray-500">
+                                {new Date(commit.commit.author.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 mt-1 truncate">{commit.commit.message}</p>
+                            <a
+                              href={commit.html_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-700 text-xs mt-1 inline-block"
+                            >
+                              View commit
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Open Issues */}
+                {githubInsights.openIssues.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Open Issues ({githubInsights.openIssues.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {githubInsights.openIssues.slice(0, 3).map((issue) => (
+                        <div key={issue.id} className="flex items-start gap-3 text-sm">
+                          <div className="flex-shrink-0">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full mt-1.5"></div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">#{issue.number}</span>
+                              <span className="text-gray-700 truncate">{issue.title}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
+                              <span>by {issue.user.login}</span>
+                              <span>•</span>
+                              <span>{new Date(issue.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <a
+                              href={issue.html_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-700 text-xs mt-1 inline-block"
+                            >
+                              View issue
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                      {githubInsights.openIssues.length > 3 && (
+                        <div className="text-sm text-gray-500 text-center pt-2">
+                          ... and {githubInsights.openIssues.length - 3} more issues
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <Github className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <div className="text-sm text-gray-500">
+                  Unable to fetch GitHub insights. Check if the repository is public or if GitHub token is configured.
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
