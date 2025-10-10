@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  use,
   type FormEvent,
   type ChangeEvent,
   type ChangeEventHandler
@@ -40,7 +41,8 @@ const statusOptions: AppStatus[] = [
   'ARCHIVED'
 ];
 
-export default function AppDetail({ params }: { params: { slug: string } }) {
+export default function AppDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const [app, setApp] = useState<AppDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -54,7 +56,7 @@ export default function AppDetail({ params }: { params: { slug: string } }) {
 
   const fetchApp = useCallback(async () => {
     try {
-      const response = await fetch(`/api/apps/${params.slug}`);
+      const response = await fetch(`/api/apps/${slug}`);
 
       if (response.ok) {
         const data: AppDetails = await response.json();
@@ -74,7 +76,7 @@ export default function AppDetail({ params }: { params: { slug: string } }) {
     } finally {
       setIsLoading(false);
     }
-  }, [params.slug]);
+  }, [slug]);
 
   useEffect(() => {
     fetchApp();
@@ -101,7 +103,7 @@ export default function AppDetail({ params }: { params: { slug: string } }) {
     event.preventDefault();
 
     try {
-      const response = await fetch(`/api/apps/${params.slug}`, {
+      const response = await fetch(`/api/apps/${slug}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

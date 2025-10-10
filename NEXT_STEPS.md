@@ -27,9 +27,8 @@
 7. **Production readiness** ✅
    - ✅ Configure PostgreSQL database for production (fixed DATABASE_URL issue)
    - ✅ Fix Prisma client generation in production builds (added postinstall script)
+   - ✅ Fix Next.js 15 params Promise issue in dynamic routes
    - Add Prisma schema for audit trails (who updated what, when) if needed.
-   - Document environment variables and deployment configuration.
-   - Set up deployment pipeline (Vercel) and monitoring (e.g., Logflare, Sentry).
 
 8. **Future enhancements**
    - Roadmap view aggregating all apps with status timelines.
