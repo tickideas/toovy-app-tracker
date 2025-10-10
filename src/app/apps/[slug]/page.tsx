@@ -11,7 +11,29 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { AppStatus } from '@/generated/prisma';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import type { AppStatus, Period } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
 
 interface AppDetails {
@@ -21,6 +43,8 @@ interface AppDetails {
   proposedDomain: string | null;
   githubUrl: string | null;
   status: AppStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AppFormState {
@@ -29,6 +53,27 @@ interface AppFormState {
   proposedDomain: string;
   githubUrl: string;
   status: AppStatus;
+}
+
+interface Update {
+  id: string;
+  appId: string;
+  authorId: string;
+  date: string;
+  period: Period;
+  progress: number;
+  summary: string;
+  blockers: string | null;
+  tags: string[] | null;
+  createdAt: string;
+}
+
+interface UpdateFormState {
+  progress: number;
+  summary: string;
+  blockers: string;
+  tags: string;
+  period: Period;
 }
 
 const statusOptions: AppStatus[] = [
@@ -42,9 +87,20 @@ const statusOptions: AppStatus[] = [
   'ARCHIVED'
 ];
 
+const periodOptions: Period[] = ['DAY', 'WEEK', 'MONTH'];
+
+const createDefaultUpdateForm = (): UpdateFormState => ({
+  progress: 0,
+  summary: '',
+  blockers: '',
+  tags: '',
+  period: 'WEEK'
+});
+
 export default function AppDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const [app, setApp] = useState<AppDetails | null>(null);
+  const [updates, setUpdates] = useState<Update[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<AppFormState>({
@@ -54,6 +110,23 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
     githubUrl: '',
     status: 'PLANNING'
   });
+  const [updateForm, setUpdateForm] = useState<UpdateFormState>(createDefaultUpdateForm());
+  const [isAddingUpdate, setIsAddingUpdate] = useState(false);
+  const [editingUpdate, setEditingUpdate] = useState<Update | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [updateToDelete, setUpdateToDelete] = useState<Update | null>(null);
+
+  const fetchUpdates = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/apps/${slug}/updates`);
+      if (response.ok) {
+        const data: Update[] = await response.json();
+        setUpdates(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch updates:', error);
+    }
+  }, [slug]);
 
   const fetchApp = useCallback(async () => {
     try {
@@ -81,7 +154,8 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
 
   useEffect(() => {
     fetchApp();
-  }, [fetchApp]);
+    fetchUpdates();
+  }, [fetchApp, fetchUpdates]);
 
   const handleFormChange =
     <T extends HTMLInputElement | HTMLTextAreaElement>(
@@ -100,7 +174,7 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
     }));
   };
 
-  const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdateApp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
@@ -116,10 +190,128 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
         const updatedApp: AppDetails = await response.json();
         setApp(updatedApp);
         setIsEditing(false);
+        toast.success('App updated successfully!');
       }
     } catch (error) {
       console.error('Failed to update app:', error);
+      toast.error('Failed to update app');
     }
+  };
+
+  const handleUpdateFormChange =
+    <T extends HTMLInputElement | HTMLTextAreaElement>(
+      key: Exclude<keyof UpdateFormState, 'period'>,
+      transformer?: (value: string) => unknown
+    ): ChangeEventHandler<T> =>
+    (event: ChangeEvent<T>) => {
+      const value = transformer ? transformer(event.target.value) : event.target.value;
+      setUpdateForm((current) => ({ ...current, [key]: value }));
+    };
+
+  const handlePeriodChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+    setUpdateForm((current) => ({
+      ...current,
+      period: event.target.value as Period
+    }));
+  };
+
+  const handleAddUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch(`/api/apps/${slug}/updates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...updateForm,
+          tags: updateForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        })
+      });
+
+      if (response.ok) {
+        setUpdateForm(createDefaultUpdateForm());
+        setIsAddingUpdate(false);
+        await fetchUpdates();
+        toast.success('Update added successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to add update:', error);
+      toast.error('Failed to add update');
+    }
+  };
+
+  const handleEditUpdate = (update: Update) => {
+    setEditingUpdate(update);
+    setUpdateForm({
+      progress: update.progress,
+      summary: update.summary,
+      blockers: update.blockers || '',
+      tags: Array.isArray(update.tags) ? update.tags.join(', ') : '',
+      period: update.period
+    });
+  };
+
+  const handleUpdateUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingUpdate) return;
+
+    try {
+      const response = await fetch(`/api/apps/${slug}/updates/${editingUpdate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...updateForm,
+          tags: updateForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        })
+      });
+
+      if (response.ok) {
+        setEditingUpdate(null);
+        setUpdateForm(createDefaultUpdateForm());
+        await fetchUpdates();
+        toast.success('Update updated successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to update update:', error);
+      toast.error('Failed to update update');
+    }
+  };
+
+  const handleDeleteUpdate = async () => {
+    if (!updateToDelete) return;
+
+    try {
+      const response = await fetch(`/api/apps/${slug}/updates/${updateToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setUpdateToDelete(null);
+        setDeleteDialogOpen(false);
+        await fetchUpdates();
+        toast.success('Update deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to delete update:', error);
+      toast.error('Failed to delete update');
+    }
+  };
+
+  const openDeleteDialog = (update: Update) => {
+    setUpdateToDelete(update);
+    setDeleteDialogOpen(true);
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return 'bg-green-500';
+    if (progress >= 50) return 'bg-yellow-500';
+    if (progress >= 20) return 'bg-orange-500';
+    return 'bg-red-500';
   };
 
   if (isLoading) {
@@ -160,82 +352,324 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
       </header>
 
       {isEditing ? (
-        <section className="rounded-lg border p-4">
-          <h2 className="font-medium mb-3">Edit Application</h2>
-          <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              type="text"
-              placeholder="Name"
-              value={editForm.name}
-              onChange={handleFormChange('name')}
-              required
-              className="border rounded p-2"
-            />
-            <select value={editForm.status} onChange={handleStatusChange} className="border rounded p-2">
-              {statusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option[0] + option.slice(1).toLowerCase()}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Proposed domain (https://...)"
-              value={editForm.proposedDomain}
-              onChange={handleFormChange('proposedDomain')}
-              className="border rounded p-2 col-span-1 md:col-span-2"
-            />
-            <input
-              type="text"
-              placeholder="GitHub URL (https://github.com/...)"
-              value={editForm.githubUrl}
-              onChange={handleFormChange('githubUrl')}
-              className="border rounded p-2 col-span-1 md:col-span-2"
-            />
-            <textarea
-              placeholder="Description"
-              value={editForm.description}
-              onChange={handleFormChange('description')}
-              className="border rounded p-2 col-span-1 md:col-span-2"
-              rows={3}
-            />
-            <div className="col-span-1 md:col-span-2 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="px-4 py-2 rounded bg-black text-white">
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Edit Application</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateApp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={editForm.name}
+                  onChange={handleFormChange('name')}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={editForm.status} onValueChange={(value) => handleStatusChange({ target: { value } } as ChangeEvent<HTMLSelectElement>)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option[0] + option.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <Label htmlFor="proposedDomain">Proposed domain</Label>
+                <Input
+                  id="proposedDomain"
+                  placeholder="https://..."
+                  value={editForm.proposedDomain}
+                  onChange={handleFormChange('proposedDomain')}
+                />
+              </div>
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <Label htmlFor="githubUrl">GitHub URL</Label>
+                <Input
+                  id="githubUrl"
+                  placeholder="https://github.com/..."
+                  value={editForm.githubUrl}
+                  onChange={handleFormChange('githubUrl')}
+                />
+              </div>
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Description"
+                  value={editForm.description}
+                  onChange={handleFormChange('description')}
+                />
+              </div>
+              <div className="col-span-1 md:col-span-2 flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       ) : (
-        <section className="grid gap-2">
-          {app.proposedDomain && <div className="text-sm">Domain: {app.proposedDomain}</div>}
-          {app.githubUrl && (
-            <a
-              href={app.githubUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-blue-600 hover:underline"
-            >
-              GitHub repo
-            </a>
-          )}
-          {app.description && <p className="text-sm text-gray-700">{app.description}</p>}
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Application Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-4">
+              {app.proposedDomain && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">🌐</span>
+                  <a
+                    href={app.proposedDomain}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {app.proposedDomain.replace(/^https?:\/\//, '')}
+                  </a>
+                </div>
+              )}
+              {app.githubUrl && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">⚡</span>
+                  <a
+                    href={app.githubUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    GitHub
+                  </a>
+                </div>
+              )}
+            </div>
+            {app.description && (
+              <p className="text-gray-700">{app.description}</p>
+            )}
+            <div className="text-xs text-gray-500">
+              Created {new Date(app.createdAt).toLocaleDateString()} • 
+              Updated {new Date(app.updatedAt).toLocaleDateString()}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      <section className="rounded border p-4 bg-gray-50">
-        <p className="text-sm text-gray-600">
-          Updates functionality coming soon! For now, you can edit your app details using the Edit
-          button above.
-        </p>
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium">Progress Updates</h2>
+          <Button onClick={() => setIsAddingUpdate(true)}>
+            Add Update
+          </Button>
+        </div>
+
+        {updates.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-gray-600">No progress updates yet. Add your first update above!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {updates.map((update) => (
+              <Card key={update.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="secondary">{update.period}</Badge>
+                      <span className="text-sm text-gray-500">
+                        {new Date(update.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditUpdate(update)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => openDeleteDialog(update)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{update.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${getProgressColor(update.progress)}`}
+                        style={{ width: `${update.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-sm mb-1">Summary</h4>
+                    <p className="text-sm text-gray-700">{update.summary}</p>
+                  </div>
+
+                  {update.blockers && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">Blockers</h4>
+                      <p className="text-sm text-orange-600">{update.blockers}</p>
+                    </div>
+                  )}
+
+                  {update.tags && Array.isArray(update.tags) && update.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {update.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
+
+      {(isAddingUpdate || editingUpdate) && (
+        <Dialog open={true} onOpenChange={() => {
+          setIsAddingUpdate(false);
+          setEditingUpdate(null);
+          setUpdateForm(createDefaultUpdateForm());
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingUpdate ? 'Edit Update' : 'Add Progress Update'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingUpdate ? 'Update the progress details below.' : 'Record your latest progress on this application.'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={editingUpdate ? handleUpdateUpdate : handleAddUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="progress">Progress (%)</Label>
+                <Input
+                  id="progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={updateForm.progress}
+                  onChange={handleUpdateFormChange('progress', parseInt)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="period">Period</Label>
+                <Select value={updateForm.period} onValueChange={(value) => handlePeriodChange({ target: { value } } as ChangeEvent<HTMLSelectElement>)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periodOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option[0] + option.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="summary">Summary</Label>
+                <Textarea
+                  id="summary"
+                  placeholder="What did you accomplish?"
+                  value={updateForm.summary}
+                  onChange={handleUpdateFormChange('summary')}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="blockers">Blockers</Label>
+                <Textarea
+                  id="blockers"
+                  placeholder="Anything preventing progress?"
+                  value={updateForm.blockers}
+                  onChange={handleUpdateFormChange('blockers')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tags">Tags</Label>
+                <Input
+                  id="tags"
+                  placeholder="frontend, backend, testing (comma separated)"
+                  value={updateForm.tags}
+                  onChange={handleUpdateFormChange('tags')}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingUpdate(false);
+                    setEditingUpdate(null);
+                    setUpdateForm(createDefaultUpdateForm());
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingUpdate ? 'Update' : 'Add'} Update
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this update from {new Date(updateToDelete?.date || '').toLocaleDateString()}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteUpdate}>
+              Delete Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
