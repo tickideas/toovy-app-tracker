@@ -9,6 +9,26 @@ import {
   type ChangeEvent,
   type ChangeEventHandler
 } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import type { AppStatus } from '@/generated/prisma';
 
 interface AuthCheckResponse {
@@ -63,7 +83,10 @@ export default function Home() {
   const [loginError, setLoginError] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [appForm, setAppForm] = useState<AppFormState>(createDefaultFormState);
+  const [appForm, setAppForm] = useState<AppFormState>(createDefaultFormState());
+  const [editingApp, setEditingApp] = useState<AppSummary | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [appToDelete, setAppToDelete] = useState<AppSummary | null>(null);
 
   const fetchApps = useCallback(async () => {
     try {
@@ -176,10 +199,74 @@ export default function Home() {
       if (response.ok) {
         setAppForm(createDefaultFormState());
         await fetchApps();
+        toast.success('App created successfully!');
       }
     } catch (error) {
       console.error('Failed to add app:', error);
+      toast.error('Failed to create app');
     }
+  };
+
+  const handleEditApp = (app: AppSummary) => {
+    setEditingApp(app);
+    setAppForm({
+      name: app.name,
+      description: '',
+      proposedDomain: app.proposedDomain || '',
+      githubUrl: app.githubUrl || '',
+      status: app.status
+    });
+  };
+
+  const handleUpdateApp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingApp) return;
+
+    try {
+      const response = await fetch(`/api/apps/${editingApp.slug}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(appForm)
+      });
+
+      if (response.ok) {
+        setEditingApp(null);
+        setAppForm(createDefaultFormState());
+        await fetchApps();
+        toast.success('App updated successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to update app:', error);
+      toast.error('Failed to update app');
+    }
+  };
+
+  const handleDeleteApp = async () => {
+    if (!appToDelete) return;
+
+    try {
+      const response = await fetch(`/api/apps/${appToDelete.slug}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setAppToDelete(null);
+        setDeleteDialogOpen(false);
+        await fetchApps();
+        toast.success('App deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to delete app:', error);
+      toast.error('Failed to delete app');
+    }
+  };
+
+  const openDeleteDialog = (app: AppSummary) => {
+    setAppToDelete(app);
+    setDeleteDialogOpen(true);
   };
 
   if (isLoading) {
@@ -249,48 +336,82 @@ export default function Home() {
       </header>
 
       <section className="rounded-lg border p-4">
-        <h2 className="font-medium mb-3">Create new application</h2>
-        <form onSubmit={handleAddApp} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input
-            name="name"
-            placeholder="Name"
-            value={appForm.name}
-            onChange={handleAppFormChange('name')}
-            required
-            className="border rounded p-2"
-          />
-          <select name="status" value={appForm.status} onChange={handleStatusChange} className="border rounded p-2">
-            {statusOptions.map((option) => (
-              <option key={option} value={option}>
-                {option[0] + option.slice(1).toLowerCase()}
-              </option>
-            ))}
-          </select>
-          <input
-            name="proposedDomain"
-            placeholder="Proposed domain (https://...)"
-            value={appForm.proposedDomain}
-            onChange={handleAppFormChange('proposedDomain')}
-            className="border rounded p-2 col-span-1 md:col-span-2"
-          />
-          <input
-            name="githubUrl"
-            placeholder="GitHub URL (https://github.com/...)"
-            value={appForm.githubUrl}
-            onChange={handleAppFormChange('githubUrl')}
-            className="border rounded p-2 col-span-1 md:col-span-2"
-          />
-          <textarea
-            name="description"
-            placeholder="Description"
-            value={appForm.description}
-            onChange={handleAppFormChange('description')}
-            className="border rounded p-2 col-span-1 md:col-span-2"
-          />
-          <div className="col-span-1 md:col-span-2 flex justify-end">
-            <button type="submit" className="px-4 py-2 rounded bg-black text-white">
-              Add
-            </button>
+        <h2 className="font-medium mb-3">
+          {editingApp ? 'Edit application' : 'Create new application'}
+        </h2>
+        <form onSubmit={editingApp ? handleUpdateApp : handleAddApp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              placeholder="Name"
+              value={appForm.name}
+              onChange={handleAppFormChange('name')}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select name="status" value={appForm.status} onValueChange={(value) => handleStatusChange({ target: { value } } as ChangeEvent<HTMLSelectElement>)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option[0] + option.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 col-span-1 md:col-span-2">
+            <Label htmlFor="proposedDomain">Proposed domain</Label>
+            <Input
+              id="proposedDomain"
+              name="proposedDomain"
+              placeholder="https://..."
+              value={appForm.proposedDomain}
+              onChange={handleAppFormChange('proposedDomain')}
+            />
+          </div>
+          <div className="space-y-2 col-span-1 md:col-span-2">
+            <Label htmlFor="githubUrl">GitHub URL</Label>
+            <Input
+              id="githubUrl"
+              name="githubUrl"
+              placeholder="https://github.com/..."
+              value={appForm.githubUrl}
+              onChange={handleAppFormChange('githubUrl')}
+            />
+          </div>
+          <div className="space-y-2 col-span-1 md:col-span-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              placeholder="Description"
+              value={appForm.description}
+              onChange={handleAppFormChange('description')}
+            />
+          </div>
+          <div className="col-span-1 md:col-span-2 flex justify-end space-x-2">
+            {editingApp && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditingApp(null);
+                  setAppForm(createDefaultFormState());
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit">
+              {editingApp ? 'Update' : 'Add'}
+            </Button>
           </div>
         </form>
       </section>
@@ -322,11 +443,46 @@ export default function Home() {
                     GitHub
                   </a>
                 )}
+                <div className="flex space-x-2 mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditApp(app)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => openDeleteDialog(app)}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{appToDelete?.name}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteApp}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

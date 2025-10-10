@@ -124,3 +124,34 @@ export async function PUT(
     return NextResponse.json({ error: 'Failed to update app' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await context.params;
+
+  if (!(await isAuthenticated())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const user = await getOrCreateUser();
+    const app = await prisma.app.findFirst({
+      where: { slug, ownerId: user.id },
+    });
+
+    if (!app) {
+      return NextResponse.json({ error: 'App not found' }, { status: 404 });
+    }
+
+    await prisma.app.delete({
+      where: { id: app.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete app:', error);
+    return NextResponse.json({ error: 'Failed to delete app' }, { status: 500 });
+  }
+}
