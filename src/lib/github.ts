@@ -1,3 +1,11 @@
+interface CacheEntry {
+  data: RepoInsights;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
 interface GitHubRepo {
   id: number;
   name: string;
@@ -83,6 +91,14 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
     };
   }
 
+  const cacheKey = `${repoInfo.owner}/${repoInfo.repo}`;
+  const cached = cache.get(cacheKey);
+  
+  // Check cache first
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
   try {
     const token = process.env.GITHUB_TOKEN;
     const headers: Record<string, string> = {
@@ -96,11 +112,12 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
 
     const baseUrl = 'https://api.github.com';
     
-    // Fetch basic repo info
-    const repoResponse = await fetch(
-      `${baseUrl}/repos/${repoInfo.owner}/${repoInfo.repo}`,
-      { headers }
-    );
+    // Make all API calls in parallel for better performance
+    const [repoResponse, commitsResponse, issuesResponse] = await Promise.all([
+      fetch(`${baseUrl}/repos/${repoInfo.owner}/${repoInfo.repo}`, { headers }),
+      fetch(`${baseUrl}/repos/${repoInfo.owner}/${repoInfo.repo}/commits?per_page=10`, { headers }),
+      fetch(`${baseUrl}/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`, { headers })
+    ]);
 
     if (!repoResponse.ok) {
       console.error('GitHub API error:', repoResponse.statusText);
@@ -115,22 +132,10 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
 
     const repo: GitHubRepo = await repoResponse.json();
 
-    // Fetch recent commits (last 10)
-    const commitsResponse = await fetch(
-      `${baseUrl}/repos/${repoInfo.owner}/${repoInfo.repo}/commits?per_page=10`,
-      { headers }
-    );
-
     let recentCommits: GitHubCommit[] = [];
     if (commitsResponse.ok) {
       recentCommits = await commitsResponse.json();
     }
-
-    // Fetch open issues
-    const issuesResponse = await fetch(
-      `${baseUrl}/repos/${repoInfo.owner}/${repoInfo.repo}/issues?state=open&per_page=20`,
-      { headers }
-    );
 
     let openIssues: GitHubIssue[] = [];
     if (issuesResponse.ok) {
@@ -141,13 +146,21 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
       ? recentCommits[0].commit.author.date 
       : null;
 
-    return {
+    const result = {
       repo,
       recentCommits,
       openIssues,
       lastCommitDate,
       commitCount: recentCommits.length,
     };
+
+    // Cache the result
+    cache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now(),
+    });
+
+    return result;
 
   } catch (error) {
     console.error('Error fetching GitHub data:', error);
@@ -160,3 +173,13 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
     };
   }
 }
+
+// Cleanup expired cache entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of cache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      cache.delete(key);
+    }
+  }
+}, 5 * 60 * 1000); // Cleanup every 5 minutes

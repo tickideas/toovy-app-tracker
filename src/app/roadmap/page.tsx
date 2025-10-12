@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,7 +58,6 @@ export default function RoadmapPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [apps, setApps] = useState<RoadmapApp[]>([]);
-  const [filteredApps, setFilteredApps] = useState<RoadmapApp[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<AppStatus | 'ALL'>('ALL');
   const [viewMode, setViewMode] = useState<'timeline' | 'kanban' | 'metrics'>('timeline');
@@ -72,7 +71,6 @@ export default function RoadmapPage() {
       }
       const data: RoadmapApp[] = await response.json();
       setApps(data);
-      setFilteredApps(data);
     } catch (error) {
       console.error('Failed to fetch roadmap data:', error);
       toast.error('Failed to load roadmap data');
@@ -99,8 +97,8 @@ export default function RoadmapPage() {
     checkAuth();
   }, [checkAuth]);
 
-  useEffect(() => {
-    const filtered = apps.filter(app => {
+  const filteredApps = useMemo(() => {
+    return apps.filter(app => {
       const matchesStatus = statusFilter === 'ALL' || app.status === statusFilter;
       const matchesSearch = searchQuery === '' || 
         app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,11 +106,9 @@ export default function RoadmapPage() {
       
       return matchesStatus && matchesSearch;
     });
-
-    setFilteredApps(filtered);
   }, [apps, searchQuery, statusFilter]);
 
-  const getAppsByStatus = () => {
+  const getAppsByStatus = useMemo(() => {
     const grouped: Record<AppStatus, RoadmapApp[]> = {
       'IDEA': [],
       'PLANNING': [],
@@ -129,9 +125,9 @@ export default function RoadmapPage() {
     });
 
     return grouped;
-  };
+  }, [filteredApps]);
 
-  const getOverallMetrics = () => {
+  const getOverallMetrics = useMemo(() => {
     const total = apps.length;
     const live = apps.filter(app => app.status === 'LIVE').length;
     const inProgress = apps.filter(app => ['BUILDING', 'TESTING', 'DEPLOYING'].includes(app.status)).length;
@@ -141,7 +137,7 @@ export default function RoadmapPage() {
     const totalBlockers = apps.reduce((sum, app) => sum + app.blockerCount, 0);
 
     return { total, live, inProgress, avgCompletion, totalBlockers };
-  };
+  }, [apps]);
 
   if (isLoading) {
     return (
@@ -164,8 +160,8 @@ export default function RoadmapPage() {
     );
   }
 
-  const metrics = getOverallMetrics();
-  const appsByStatus = getAppsByStatus();
+  const metrics = getOverallMetrics;
+  const appsByStatus = getAppsByStatus;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">

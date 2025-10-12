@@ -3,18 +3,34 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token')?.value
-  const isAuthenticated = authToken === 'authenticated'
-
+  
+  // In middleware, we only check for the presence of a token
+  // The actual JWT verification happens in the API routes
+  // This avoids the Edge Runtime crypto module limitation
+  const hasToken = !!authToken
+  
   const isAuthPage = request.nextUrl.pathname === '/'
   const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+  const isAuthApiRoute = request.nextUrl.pathname.startsWith('/api/auth/')
+  const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/public/')
+  const isSharePage = request.nextUrl.pathname.startsWith('/share/')
   
-  // Allow access to auth pages and API routes
-  if (isAuthPage || isApiRoute) {
+  // Allow access to auth pages, auth API routes, public API routes, and share pages
+  if (isAuthPage || isAuthApiRoute || isPublicApiRoute || isSharePage) {
     return NextResponse.next()
   }
 
-  // Protect all other routes
-  if (!isAuthenticated) {
+  // For other API routes, just check if token exists
+  // The actual verification happens in the API route handlers
+  if (isApiRoute && !hasToken) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+
+  // For non-API routes, they need the token
+  if (!hasToken && !isAuthPage) {
     const loginUrl = new URL('/', request.url)
     return NextResponse.redirect(loginUrl)
   }

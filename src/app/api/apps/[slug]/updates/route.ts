@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-
-async function isAuthenticated() {
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('auth_token');
-  return authToken?.value === 'authenticated';
-}
+import { isAuthenticated } from '@/lib/auth-server';
 
 const periods = ['DAY', 'WEEK', 'MONTH'] as const;
 

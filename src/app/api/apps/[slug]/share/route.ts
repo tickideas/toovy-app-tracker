@@ -7,7 +7,7 @@ import { generateShareCode, DEFAULT_SHARE_PERMISSIONS, SHARE_PRESETS } from '@/l
 async function isAuthenticated() {
   const cookieStore = await cookies();
   const authToken = cookieStore.get('auth_token');
-  return authToken?.value === 'authenticated';
+  return authToken?.value === 'authenticated-user';
 }
 
 const shareLinkSchema = z.object({

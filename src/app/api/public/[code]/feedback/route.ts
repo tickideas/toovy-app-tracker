@@ -20,7 +20,11 @@ export async function POST(
     const ip = request.headers.get('x-forwarded-for') || 
                 request.headers.get('x-real-ip') || 
                 'unknown';
-    const rateLimitResult = rateLimit(`feedback:${code}:${ip}`, 5, 60 * 1000); // 5 feedbacks per minute per IP
+    const rateLimitResult = rateLimit({
+      identifier: `feedback:${code}:${ip}`,
+      maxRequests: 5,
+      windowMs: 60 * 1000
+    }); // 5 feedbacks per minute per IP
     
     if (!rateLimitResult.success) {
       return NextResponse.json({ 
@@ -28,8 +32,8 @@ export async function POST(
       }, { 
         status: 429,
         headers: {
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining?.toString() || '0',
+          'X-RateLimit-Reset': rateLimitResult.resetTime?.toString() || '',
         }
       });
     }

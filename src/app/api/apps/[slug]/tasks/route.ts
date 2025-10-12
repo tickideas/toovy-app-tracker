@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 async function isAuthenticated() {
   const cookieStore = await cookies();
   const authToken = cookieStore.get('auth_token');
-  return authToken?.value === 'authenticated';
+  return authToken?.value === 'authenticated-user';
 }
 
 async function getOrCreateUser() {
