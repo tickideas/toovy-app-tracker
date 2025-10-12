@@ -1,42 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyPassword, generateToken, setAuthCookie } from '@/lib/auth';
-import { rateLimit } from '@/lib/rate-limit';
+import { generateToken, setAuthCookie } from '@/lib/auth';
 import { logger } from '@/lib/logger';
+import prisma from '@/lib/prisma';
+
+async function getOrCreateUser() {
+  // For simplicity, we'll use a hardcoded user ID or create one if it doesn't exist
+  let user = await prisma.user.findFirst();
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: 'admin@local.dev',
+        name: 'Admin User'
+      }
+    });
+  }
+
+  return user;
+}
 
 export async function POST(request: NextRequest) {
-  // Get client IP for rate limiting
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 
-    request.headers.get('x-real-ip') || 
-    'unknown';
-
-  // Rate limiting temporarily disabled for testing
-  // TODO: Re-enable after confirming authentication works
-  /*
-  const rateLimitResult = rateLimit({
-    identifier: `login:${ip}`,
-    maxRequests: 5, // 5 attempts per 15 minutes
-    windowMs: 15 * 60 * 1000,
-  });
-
-  if (!rateLimitResult.success) {
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Too many login attempts. Please try again later.',
-        resetTime: rateLimitResult.resetTime 
-      },
-      { 
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': '5',
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(rateLimitResult.resetTime),
-          'Retry-After': String(Math.ceil((rateLimitResult.resetTime! - Date.now()) / 1000)),
-        }
-      }
-    );
-  }
-  */
   try {
     const { username, password } = await request.json();
 
@@ -78,9 +61,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate JWT token
+    // Get or create the database user
+    const user = await getOrCreateUser();
+
+    // Generate JWT token with actual database user ID
     const token = generateToken({
-      userId: 'admin',
+      userId: user.id,
       username: username,
     });
 

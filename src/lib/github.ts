@@ -20,6 +20,7 @@ interface GitHubRepo {
   updated_at: string;
   pushed_at: string;
   default_branch: string;
+  private: boolean;
 }
 
 interface GitHubCommit {
@@ -60,6 +61,7 @@ export interface RepoInsights {
   openIssues: GitHubIssue[];
   lastCommitDate: string | null;
   commitCount: number;
+  error?: string;
 }
 
 function extractRepoFromUrl(githubUrl: string): { owner: string; repo: string } | null {
@@ -78,7 +80,30 @@ function extractRepoFromUrl(githubUrl: string): { owner: string; repo: string } 
   return null;
 }
 
-export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> {
+// Helper function to extract GitHub username from URL
+function extractGitHubUsername(githubUrl: string): string | null {
+  const match = githubUrl.match(/github\.com\/([^\/]+)/i);
+  return match ? match[1] : null;
+}
+
+// Helper function to get appropriate token for repository
+export function getGitHubTokenForRepo(githubUrl: string): string | null {
+  const username = extractGitHubUsername(githubUrl);
+  
+  if (!username) return process.env.GITHUB_TOKEN || null;
+  
+  // Try user-specific token first
+  const userToken = process.env[`GITHUB_TOKEN_${username.toUpperCase()}`];
+  if (userToken) return userToken;
+  
+  // Fallback to default token
+  return process.env.GITHUB_TOKEN || null;
+}
+
+export async function getRepoInsights(githubUrl: string, options?: { 
+  isOwner?: boolean; 
+  hasValidToken?: boolean 
+}): Promise<RepoInsights> {
   const repoInfo = extractRepoFromUrl(githubUrl);
   
   if (!repoInfo) {
@@ -100,13 +125,14 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
   }
 
   try {
-    const token = process.env.GITHUB_TOKEN;
+    const token = getGitHubTokenForRepo(githubUrl);
     const headers: Record<string, string> = {
       'Accept': 'application/vnd.github.v3+json',
       'User-Agent': 'AppTracker',
     };
 
-    if (token) {
+    // Use token if available and if user is owner (for private repos)
+    if (token && (options?.isOwner || options?.hasValidToken)) {
       headers['Authorization'] = `token ${token}`;
     }
 
@@ -120,13 +146,15 @@ export async function getRepoInsights(githubUrl: string): Promise<RepoInsights> 
     ]);
 
     if (!repoResponse.ok) {
-      console.error('GitHub API error:', repoResponse.statusText);
+      console.error('GitHub API error:', repoResponse.status, repoResponse.statusText);
+      // Return more detailed error information
       return {
         repo: null,
         recentCommits: [],
         openIssues: [],
         lastCommitDate: null,
         commitCount: 0,
+        error: `GitHub API error (${repoResponse.status}): ${repoResponse.statusText}`
       };
     }
 

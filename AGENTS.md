@@ -63,6 +63,7 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
 - **Database**: Prisma ORM with SQLite for development, Postgres (Prisma Cloud) for production
 - **Components**: Client components for interactivity, shadcn/ui + Tailwind CSS for styling
 - **UI/UX**: Modern form components with toast notifications and confirmation dialogs
+- **GitHub Integration**: Multi-account token management with automatic repository access control
 
 ### Implemented Features
 - ✅ Full CRUD operations for applications (Create, Read, Update, Delete)
@@ -77,6 +78,10 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
 - ✅ Timeline-based progress management with blockers and tags
 - ✅ Rich metadata display with card-based responsive UI
 - ✅ **Enhanced Dashboard UI**: Modern modal-based forms, statistics dashboard, status filtering, improved app cards with hover effects, better empty states, and micro-interactions
+- ✅ **GitHub Integration**: Real-time repository insights with commit history, issues, and activity tracking
+- ✅ **Multi-Account Support**: Manage multiple GitHub accounts with per-repository token resolution
+- ✅ **Private Repository Access**: Secure handling of private repositories with proper authentication
+- ✅ **Token Management**: Automatic token selection with fallback support and debugging tools
  
  ### Git Workflow Requirements (MANDATORY) - DO NOT SKIP
 Before writing ANY code, you MUST:

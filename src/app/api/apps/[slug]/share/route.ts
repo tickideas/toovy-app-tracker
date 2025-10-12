@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { generateShareCode, DEFAULT_SHARE_PERMISSIONS, SHARE_PRESETS } from '@/lib/share';
 
 async function isAuthenticated() {
   const cookieStore = await cookies();
-  const authToken = cookieStore.get('auth_token');
-  return authToken?.value === 'authenticated-user';
+  const authToken = cookieStore.get('auth_token')?.value;
+  
+  if (!authToken) return false;
+  
+  const user = verifyToken(authToken);
+  return !!user;
 }
 
 const shareLinkSchema = z.object({

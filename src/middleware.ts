@@ -13,10 +13,11 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
   const isAuthApiRoute = request.nextUrl.pathname.startsWith('/api/auth/')
   const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/public/')
+  const isDebugApiRoute = request.nextUrl.pathname.startsWith('/api/debug/')
   const isSharePage = request.nextUrl.pathname.startsWith('/share/')
   
-  // Allow access to auth pages, auth API routes, public API routes, and share pages
-  if (isAuthPage || isAuthApiRoute || isPublicApiRoute || isSharePage) {
+  // Allow access to auth pages, auth API routes, public API routes, debug API routes, and share pages
+  if (isAuthPage || isAuthApiRoute || isPublicApiRoute || isDebugApiRoute || isSharePage) {
     return NextResponse.next()
   }
 

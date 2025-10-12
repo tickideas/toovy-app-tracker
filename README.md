@@ -30,9 +30,14 @@ The application is fully functional and deployed to Vercel with PostgreSQL datab
 - 🔗 **Public Sharing**: Share application progress with external stakeholders via secure share links
 - 🗺️ **Roadmap View**: Comprehensive roadmap visualization with timeline, kanban, and metrics views
 - 🔧 **GitHub Integration**: Fetch real-time repository insights including commits, issues, and activity
+- 👥 **Multi-Account Support**: Manage multiple GitHub accounts with automatic token resolution
+- 🔒 **Private Repository Access**: Secure access to private repositories with proper authentication
+- 🎯 **Smart Token Management**: Per-repository token selection with fallback support
+- 🛠️ **GitHub Token Debugging**: Built-in tools for testing and troubleshooting GitHub token configuration
 - 📝 **Task Tracking**: Detailed task management with progress tracking and blocker identification
 - 🔔 **Feedback System**: Collect feedback on shared applications for stakeholder collaboration
 - 🛡️ **Enhanced Security**: Rate limiting, JWT authentication, input validation, and secure credential management
+- 📊 **Production Sharing**: Configurable public sharing with proper domain support and security controls
 - 🧪 **Testing Infrastructure**: Comprehensive testing setup with Vitest and React Testing Library
 - 📊 **Performance Optimizations**: Cached API responses, memoized components, and optimized queries
 
@@ -75,10 +80,17 @@ The application is fully functional and deployed to Vercel with PostgreSQL datab
    DATABASE_URL="file:./dev.db"
    NEXTAUTH_URL=http://localhost:3000
    NEXTAUTH_SECRET=your-random-secret
+   NEXT_PUBLIC_APP_URL="http://localhost:3000"  # ⚠️  Update this for production!
 
    # Simple authentication credentials
    LOGIN_USERNAME=admin
    LOGIN_PASSWORD=your-secure-password
+
+   # GitHub Integration (optional but recommended)
+   GITHUB_TOKEN="ghp_your_github_token"
+   # Add account-specific tokens for multi-account support:
+   # GITHUB_TOKEN_MICROSOFT="ghp_ms_token"
+   # GITHUB_TOKEN_FACEBOOK="ghp_fb_token"
    ```
 3. Run database migrations and generate the Prisma client:
    ```bash
@@ -117,6 +129,42 @@ The application is fully functional and deployed to Vercel with PostgreSQL datab
 - **Responsive Design**: Optimized experience across desktop, tablet, and mobile devices
 - **Empty States**: Helpful guidance when no apps exist or search returns no results
 
+### GitHub Integration
+
+#### Repository Insights
+- **Real-time Data**: Fetch live repository statistics, commits, and issues from GitHub
+- **Visual Indicators**: Private repository badges and access status indicators
+- **Comprehensive Stats**: Stars, forks, language, open issues, and recent activity tracking
+
+#### Multi-Account Support
+- **Automatic Token Resolution**: Uses account-specific tokens based on repository owner
+- **Flexible Configuration**: Support for unlimited GitHub accounts via environment variables
+- **Fallback Safety**: Default token ensures continuous operation when specific tokens are missing
+
+#### Token Configuration
+```bash
+# Default/fallback token
+GITHUB_TOKEN="ghp_your_default_token"
+
+# Account-specific tokens
+GITHUB_TOKEN_MICROSOFT="ghp_ms_token"
+GITHUB_TOKEN_FACEBOOK="ghp_fb_token"
+GITHUB_TOKEN_YOURUSERNAME="ghp_personal_token"
+```
+
+#### Token Management
+- **Debug Endpoint**: `/api/debug/github-tokens` for testing and troubleshooting
+- **Security Features**: Owner-only access for private repositories
+- **Rate Limiting**: Distributed API requests across multiple tokens
+- **Comprehensive Docs**: See `docs/GITHUB_MULTI_ACCOUNT.md` for detailed configuration
+
+#### Repository Access
+| Repository Type | Token Required | Access Control |
+|-----------------|----------------|----------------|
+| Public          | Optional       | Owner only |
+| Private         | Required       | Owner + Valid Token |
+| Organization    | Required       | Owner + Org Access |
+
 ## Scripts
 
 - `npm run dev` — start development server with Turbopack
@@ -151,12 +199,14 @@ To deploy a new instance:
    - `LOGIN_USERNAME` - Admin username
    - `LOGIN_PASSWORD` - Secure password
    - `NEXTAUTH_SECRET` - Random secret for session security
+   - `NEXT_PUBLIC_APP_URL` - Your production domain (e.g., `https://yourapp.domain.com`)
 3. Deploy to Vercel (build script includes `prisma generate`)
 
 ### Security Notes
 
 - Change the default `LOGIN_USERNAME` and `LOGIN_PASSWORD` in production
 - Use a strong, randomly generated `NEXTAUTH_SECRET`
+- **CRITICAL**: Set `NEXT_PUBLIC_APP_URL` to your production domain for working share links
 - Consider using environment-specific secrets for enhanced security
 
 ### Future Enhancements
@@ -167,7 +217,7 @@ Based on the [NEXT_STEPS.md](./NEXT_STEPS.md) roadmap:
 - **Testing & Quality**: Unit tests with Vitest and E2E tests with Playwright
 - **Enhanced Filtering**: Advanced filtering by period and date ranges
 - **Team Features**: Multi-tenant support and user roles
-- **GitHub Integration**: API integration for repository insights
+- **Advanced GitHub Features**: Pull request tracking, release monitoring, and CI/CD integration
 - **Analytics Dashboard**: Quick stats and completion metrics across apps
 
 ### Current Limitations
@@ -191,6 +241,7 @@ Based on the [NEXT_STEPS.md](./NEXT_STEPS.md) roadmap:
 6. **Enhanced Management** - Search, sorting, and improved app discovery
 7. **Progress Tracking** - Comprehensive updates workflow with timeline management
 8. **Enhanced Dashboard UI** - Modern modal-based forms, statistics dashboard, status filtering, improved app cards with hover effects, better empty states, and micro-interactions
+9. **GitHub Integration** - Multi-account token management, repository insights, and private repository support with comprehensive security controls
 
 ### Technical Challenges Solved
 
@@ -200,5 +251,7 @@ Based on the [NEXT_STEPS.md](./NEXT_STEPS.md) roadmap:
 - **Authentication**: Route middleware implementation for security
 - **UI/UX**: Modern component library integration with proper error handling
 - **Enhanced UX**: Modal-based forms, statistics dashboard, status filtering, and micro-interactions for improved user experience
+- **GitHub Integration**: Multi-account token management with automatic resolution and private repository security
+- **API Security**: Proper access controls for GitHub API endpoints with owner-only restrictions
 
 The application demonstrates a complete development cycle from local development to production deployment with proper error handling, modern UI patterns, and production-ready configuration.

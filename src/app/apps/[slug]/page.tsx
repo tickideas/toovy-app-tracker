@@ -35,7 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import type { AppStatus, Period, Environment } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
-import { Rocket, Edit2, Trash2, Plus, Github, ExternalLink, GitBranch, AlertCircle } from 'lucide-react';
+import { Rocket, Edit2, Trash2, Plus, Github, ExternalLink, GitBranch, AlertCircle, Lock } from 'lucide-react';
 import ShareLinkManager from '@/components/share/ShareLinkManager';
 import TaskManager from '@/components/tasks/TaskManager';
 
@@ -54,6 +54,7 @@ interface GitHubInsights {
     updated_at: string;
     pushed_at: string;
     default_branch: string;
+    private: boolean;
   } | null;
   recentCommits: Array<{
     sha: string;
@@ -82,6 +83,7 @@ interface GitHubInsights {
   }>;
   lastCommitDate: string | null;
   commitCount: number;
+  error?: string;
 }
 
 interface AppDetails {
@@ -216,9 +218,28 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
       if (response.ok) {
         const data: GitHubInsights = await response.json();
         setGithubInsights(data);
+      } else {
+        // Handle error responses
+        const errorData = await response.json().catch(() => ({}));
+        setGithubInsights({
+          repo: null,
+          recentCommits: [],
+          openIssues: [],
+          lastCommitDate: null,
+          commitCount: 0,
+          error: errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        });
       }
     } catch (error) {
       console.error('Failed to fetch GitHub insights:', error);
+      setGithubInsights({
+        repo: null,
+        recentCommits: [],
+        openIssues: [],
+        lastCommitDate: null,
+        commitCount: 0,
+        error: 'Network error or fetch failed'
+      });
     } finally {
       setIsGithubLoading(false);
     }
@@ -694,6 +715,12 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
               <div className="flex items-center gap-2">
                 <Github className="h-5 w-5" />
                 <CardTitle>GitHub Insights</CardTitle>
+                {githubInsights?.repo?.private && (
+                  <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                    <Lock className="h-3 w-3" />
+                    Private
+                  </div>
+                )}
               </div>
               {githubInsights?.repo && (
                 <a
@@ -839,7 +866,12 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
               <div className="text-center py-4">
                 <Github className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                 <div className="text-sm text-gray-500">
-                  Unable to fetch GitHub insights. Check if the repository is public or if GitHub token is configured.
+                  {githubInsights?.error 
+                    ? githubInsights.error.includes('Access denied') || githubInsights.error.includes('private')
+                      ? `${githubInsights.error} Private repositories require authentication and ownership.`
+                      : `GitHub API Error: ${githubInsights.error}`
+                    : 'Unable to fetch GitHub insights. Check if the repository is public or if GitHub token is configured.'
+                  }
                 </div>
               </div>
             )}
