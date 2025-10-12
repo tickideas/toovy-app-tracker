@@ -52,12 +52,7 @@ export async function POST(request: NextRequest) {
     const storedUsername = process.env.LOGIN_USERNAME;
     const storedPassword = process.env.LOGIN_PASSWORD;
 
-    // Debug logging (remove in production)
-    console.log('Login attempt:', { 
-      providedUsername: username,
-      storedUsername,
-      passwordsMatch: password === storedPassword
-    });
+
 
     if (!storedUsername || !storedPassword) {
       return NextResponse.json(
