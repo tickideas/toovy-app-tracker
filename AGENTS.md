@@ -6,7 +6,7 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
 
 **Deployment**: Live on Vercel at [apptracker.tickideas.org](https://apptracker.tickideas.org)
 **Version**: Production stable with core CRUD functionality
-**Last Updated**: October 2024 (Enhanced Dashboard UI)
+**Last Updated**: October 2025 (Modern Color Scheme Implementation)
 
  ## Core Commands
 
@@ -82,6 +82,15 @@ This is an overview of AppTracker. It's a simple app to track the lifecycle and 
 - ✅ **Multi-Account Support**: Manage multiple GitHub accounts with per-repository token resolution
 - ✅ **Private Repository Access**: Secure handling of private repositories with proper authentication
 - ✅ **Token Management**: Automatic token selection with fallback support and debugging tools
+- ✅ **Modern Color Scheme**: Professional palette with Royal Blue primary, Lime Green accents, and clean Off White backgrounds
+
+### Design System
+- **Primary Color**: Royal Blue (#2563EB) - Professional, modern SaaS feel
+- **Accent Color**: Lime Green (#6EE7B7) - Fresh contrast for completion/progress states  
+- **Background**: Off White (#F9FAFB) with Light Gray (#E5E7EB) borders - Clean and airy
+- **Text**: Charcoal (#273043) for optimal readability
+- **Secondary Colors**: Violet (#7C3AED) and Sky Blue (#38BDF8) for highlights and special states
+- **Dark Mode**: Deep Graphite (#1F2937) backgrounds with lighter color variants for accessibility
  
  ### Git Workflow Requirements (MANDATORY) - DO NOT SKIP
 Before writing ANY code, you MUST:

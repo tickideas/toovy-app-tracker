@@ -40,13 +40,14 @@ The application is fully functional and deployed to Vercel with PostgreSQL datab
 - 📊 **Production Sharing**: Configurable public sharing with proper domain support and security controls
 - 🧪 **Testing Infrastructure**: Comprehensive testing setup with Vitest and React Testing Library
 - 📊 **Performance Optimizations**: Cached API responses, memoized components, and optimized queries
+- 🎨 **Modern Color Scheme**: Professional palette with Royal Blue primary, Lime Green accents, and clean Off White backgrounds for enhanced visual hierarchy
 
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router, TypeScript)
 - **Database**: Prisma ORM with SQLite (dev) / PostgreSQL (production)
 - **Authentication**: Simple cookie-based sessions with middleware protection
-- **UI**: Tailwind CSS + shadcn/ui components
+- **UI**: Tailwind CSS + shadcn/ui components with custom modern color scheme
 - **Validation**: Zod schemas for type safety
 - **Deployment**: Vercel with Prisma Cloud PostgreSQL
 
@@ -165,6 +166,27 @@ GITHUB_TOKEN_YOURUSERNAME="ghp_personal_token"
 | Private         | Required       | Owner + Valid Token |
 | Organization    | Required       | Owner + Org Access |
 
+## Design System
+
+The application features a cohesive modern color palette designed for professional SaaS aesthetics and optimal user experience:
+
+### Color Palette
+- **Primary**: Royal Blue (#2563EB) - Expresses trust, professionalism, and modern SaaS feel
+- **Accent**: Lime Green (#6EE7B7) - For completion/progress states, providing fresh contrast against blues
+- **Background**: Off White (#F9FAFB) with Light Gray (#E5E7EB) borders - Keeps things airy and clean
+- **Text**: Charcoal (#273043) - Provides clarity and optimal readability
+- **Secondary**: Violet (#7C3AED) and Sky Blue (#38BDF8) - Occasional highlights, giving vibrancy without crowding
+
+### Dark Mode Support
+- **Background**: Deep Graphite (#1F2937) - For reduced eye strain in low-light environments
+- **Adaptive Colors**: Lighter variants of all colors ensure proper contrast and accessibility in dark mode
+
+### Implementation
+- All colors use CSS custom properties for easy theming and maintenance
+- Gradient combinations follow the primary-to-accent pattern for visual consistency
+- Color usage follows accessibility guidelines with proper contrast ratios
+- Components leverage semantic color tokens for status indicators and interactive states
+
 ## Scripts
 
 - `npm run dev` — start development server with Turbopack
@@ -242,6 +264,7 @@ Based on the [NEXT_STEPS.md](./NEXT_STEPS.md) roadmap:
 7. **Progress Tracking** - Comprehensive updates workflow with timeline management
 8. **Enhanced Dashboard UI** - Modern modal-based forms, statistics dashboard, status filtering, improved app cards with hover effects, better empty states, and micro-interactions
 9. **GitHub Integration** - Multi-account token management, repository insights, and private repository support with comprehensive security controls
+10. **Modern Color Scheme** - Professional palette implementation with Royal Blue primary, Lime Green accents, and enhanced visual hierarchy
 
 ### Technical Challenges Solved
 

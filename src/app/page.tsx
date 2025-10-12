@@ -404,12 +404,12 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-300/10 to-purple-300/10 rounded-full blur-3xl animate-pulse delay-500" />
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-400/20 to-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-300/10 to-emerald-300/10 rounded-full blur-3xl animate-pulse delay-500" />
         </div>
 
         {/* Floating Elements */}
@@ -427,7 +427,7 @@ export default function Home() {
               <div className="grid lg:grid-cols-2 min-h-[600px]">
                 
                 {/* Left Side - Branding & Visual */}
-                <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-12 flex flex-col justify-between text-white">
+                <div className="relative bg-gradient-to-br from-blue-600 via-emerald-500 to-blue-700 p-12 flex flex-col justify-between text-white">
                   <div className="absolute inset-0 bg-black/10" />
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-8">
@@ -557,7 +557,7 @@ export default function Home() {
                       <Button
                         type="submit"
                         disabled={isLoadingLogin}
-                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-medium rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
                       >
                         {isLoadingLogin ? (
                           <div className="flex items-center justify-center gap-2">
@@ -628,13 +628,13 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto max-w-7xl p-6 space-y-8">
         {/* Enhanced Header */}
         <header className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-lg">
                 <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
                   <rect width="32" height="32" rx="8" fill="#0F172A"/>
                   <path d="M8 12C8 10.8954 8.89543 10 10 10H22C23.1046 10 24 10.8954 24 12V20C24 21.1046 23.1046 22 22 22H10C8.89543 22 8 21.1046 8 20V12Z" fill="#1E293B"/>
@@ -670,7 +670,7 @@ export default function Home() {
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-900/20 dark:to-emerald-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Apps</p>
@@ -679,7 +679,7 @@ export default function Home() {
                 <BarChart3 className="h-8 w-8 text-blue-500 opacity-50" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 dark:text-green-400 font-medium">Live</p>
@@ -688,7 +688,7 @@ export default function Home() {
                 <Zap className="h-8 w-8 text-green-500 opacity-50" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">In Progress</p>
@@ -699,7 +699,7 @@ export default function Home() {
                 <Clock className="h-8 w-8 text-yellow-500 opacity-50" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-sky-50 to-sky-100 dark:from-sky-900/20 dark:to-sky-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Ideas</p>
@@ -714,7 +714,7 @@ export default function Home() {
           <div className="flex justify-center">
             <Button 
               onClick={handleOpenCreateModal}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+              className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-white px-8 py-3 rounded-lg flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="h-5 w-5" />
               Add New App
@@ -869,7 +869,7 @@ export default function Home() {
                   <p className="text-slate-600 dark:text-slate-400 mb-6">
                     Start by creating your first application to track its progress and manage its lifecycle.
                   </p>
-                  <Button onClick={handleOpenCreateModal} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                  <Button onClick={handleOpenCreateModal} className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First App
                   </Button>
@@ -1115,7 +1115,7 @@ export default function Home() {
               </Button>
               <Button 
                 type="submit"
-                className="flex-1 md:flex-none bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                className="flex-1 md:flex-none bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
               >
                 {editingApp ? 'Update Application' : 'Create Application'}
               </Button>

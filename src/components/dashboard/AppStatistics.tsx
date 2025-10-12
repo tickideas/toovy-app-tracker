@@ -30,8 +30,8 @@ export default function AppStatistics({ apps }: AppStatisticsProps) {
 
   const getStatusColor = (type: 'success' | 'warning' | 'info' | 'danger') => {
     const colors = {
-      success: `from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20`,
-      warning: `from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20`,
+      success: `from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20`,
+      warning: `from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20`,
       info: `from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20`,
       danger: `from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20`,
     };
