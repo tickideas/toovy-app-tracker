@@ -21,7 +21,11 @@ export async function POST(
     const ip = request.headers.get('x-forwarded-for') || 
                 request.headers.get('x-real-ip') || 
                 'unknown';
-    const rateLimitResult = rateLimit(`tasks:${code}:${ip}`, 3, 60 * 1000); // 3 tasks per minute per IP
+    const rateLimitResult = rateLimit({
+      identifier: `tasks:${code}:${ip}`,
+      maxRequests: 3,
+      windowMs: 60 * 1000
+    }); // 3 tasks per minute per IP
     
     if (!rateLimitResult.success) {
       return NextResponse.json({ 
@@ -29,8 +33,8 @@ export async function POST(
       }, { 
         status: 429,
         headers: {
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining?.toString() || '0',
+          'X-RateLimit-Reset': rateLimitResult.resetTime?.toString() || '',
         }
       });
     }

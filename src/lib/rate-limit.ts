@@ -1,58 +1,51 @@
-// Simple in-memory rate limiting for development
-// In production, you'd want to use Redis or a proper rate limiting service
-
-interface RateLimitEntry {
+interface RateLimitStore {
   count: number;
   resetTime: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitEntry>();
+const store = new Map<string, RateLimitStore>();
 
-export function rateLimit(
-  identifier: string,
-  limit: number = 10,
-  windowMs: number = 60 * 1000 // 1 minute
-): { success: boolean; remaining: number; resetTime: number } {
+export function rateLimit({
+  windowMs = 15 * 60 * 1000, // 15 minutes
+  maxRequests = 5, // 5 requests per window
+  identifier = '',
+}: {
+  windowMs?: number;
+  maxRequests?: number;
+  identifier: string;
+}): { success: boolean; resetTime?: number; remaining?: number } {
   const now = Date.now();
-  const entry = rateLimitStore.get(identifier);
-
-  if (!entry || now > entry.resetTime) {
-    // New window
-    const newEntry: RateLimitEntry = {
-      count: 1,
-      resetTime: now + windowMs,
-    };
-    rateLimitStore.set(identifier, newEntry);
-    return {
-      success: true,
-      remaining: limit - 1,
-      resetTime: newEntry.resetTime,
+  const key = `${identifier}:${Math.floor(now / windowMs)}`;
+  
+  const record = store.get(key);
+  
+  if (!record) {
+    store.set(key, { count: 1, resetTime: now + windowMs });
+    return { success: true, resetTime: now + windowMs, remaining: maxRequests - 1 };
+  }
+  
+  if (record.count >= maxRequests) {
+    return { 
+      success: false, 
+      resetTime: record.resetTime, 
+      remaining: 0 
     };
   }
-
-  // Existing window
-  if (entry.count >= limit) {
-    return {
-      success: false,
-      remaining: 0,
-      resetTime: entry.resetTime,
-    };
-  }
-
-  entry.count++;
-  return {
-    success: true,
-    remaining: limit - entry.count,
-    resetTime: entry.resetTime,
+  
+  record.count++;
+  return { 
+    success: true, 
+    resetTime: record.resetTime, 
+    remaining: maxRequests - record.count 
   };
 }
 
-// Clean up expired entries periodically
+// Cleanup old entries periodically
 setInterval(() => {
   const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitStore.delete(key);
+  for (const [key, record] of store.entries()) {
+    if (now > record.resetTime) {
+      store.delete(key);
     }
   }
-}, 5 * 60 * 1000); // Clean up every 5 minutes
+}, 60 * 1000); // Cleanup every minute
