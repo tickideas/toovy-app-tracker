@@ -34,7 +34,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { toast } from 'sonner';
 import type { AppStatus, Period } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
-import { Plus, Search, Edit2, Trash2, ExternalLink, Github, LogOut, BarChart3, Package, Clock, Zap, Filter, Target } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ExternalLink, Github, LogOut, BarChart3, Package, Clock, Zap, Filter, Target, Eye, EyeOff, Lock, Sparkles, ArrowRight, User, Shield, Zap as ZapIcon } from 'lucide-react';
 
 interface AuthCheckResponse {
   authenticated: boolean;
@@ -108,6 +108,9 @@ export default function Home() {
   const [loginError, setLoginError] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [appForm, setAppForm] = useState<AppFormState>(createDefaultFormState());
   const [editingApp, setEditingApp] = useState<AppSummary | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -239,6 +242,7 @@ export default function Home() {
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginError('');
+    setIsLoadingLogin(true);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -253,13 +257,18 @@ export default function Home() {
 
       if (data.success) {
         setIsAuthenticated(true);
+        toast.success('Welcome back! 🎉');
         await fetchApps();
       } else {
         setLoginError(data.error ?? 'Login failed');
+        toast.error('Invalid credentials');
       }
     } catch (error) {
       console.error('Login failed:', error);
       setLoginError('Login failed');
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsLoadingLogin(false);
     }
   };
 
@@ -395,59 +404,237 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="container mx-auto max-w-5xl p-6 space-y-8">
-        <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">AppTracker</h1>
-        </header>
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-400/20 to-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-300/10 to-emerald-300/10 rounded-full blur-3xl animate-pulse delay-500" />
+        </div>
 
-        <main className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4 w-full max-w-md">
-            <h2 className="text-xl font-medium">Welcome to AppTracker</h2>
-            <p className="text-gray-600">Please sign in to manage your applications</p>
+        {/* Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-ping" />
+          <div className="absolute top-40 right-32 w-3 h-3 bg-purple-400 rounded-full animate-ping delay-300" />
+          <div className="absolute bottom-32 left-1/3 w-2 h-2 bg-pink-400 rounded-full animate-ping delay-700" />
+          <div className="absolute top-1/3 right-20 w-2 h-2 bg-indigo-400 rounded-full animate-ping delay-1000" />
+        </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={handleAuthFormChange(setUsername)}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+        {/* Main Content */}
+        <div className="relative min-h-screen flex items-center justify-center p-6">
+          <div className="w-full max-w-6xl mx-auto">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/20 overflow-hidden">
+              <div className="grid lg:grid-cols-2 min-h-[600px]">
+                
+                {/* Left Side - Branding & Visual */}
+                <div className="relative bg-gradient-to-br from-blue-600 via-emerald-500 to-blue-700 p-12 flex flex-col justify-between text-white">
+                  <div className="absolute inset-0 bg-black/10" />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                        <Sparkles className="h-8 w-8" />
+                      </div>
+                      <div>
+                        <h1 className="text-2xl font-bold">AppTracker</h1>
+                        <p className="text-blue-100 text-sm">Application Lifecycle Management</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <h2 className="text-4xl font-bold leading-tight">
+                        Welcome Back to Your Project Hub
+                      </h2>
+                      <p className="text-blue-100 text-lg leading-relaxed">
+                        Track, manage, and celebrate your application development journey. From idea to deployment, we&apos;ve got you covered.
+                      </p>
+                    </div>
+
+                    <div className="mt-12 space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                          <Shield className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">Secure & Private</h3>
+                          <p className="text-blue-100 text-sm">Your data is encrypted and secure</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                          <ZapIcon className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">Lightning Fast</h3>
+                          <p className="text-blue-100 text-sm">Built for performance and speed</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Decorative Elements */}
+                  <div className="absolute top-10 right-10 w-20 h-20 bg-white/10 rounded-full blur-xl" />
+                  <div className="absolute bottom-20 right-20 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+                </div>
+
+                {/* Right Side - Login Form */}
+                <div className="p-12 flex flex-col justify-center">
+                  <div className="max-w-md mx-auto w-full space-y-8">
+                    <div className="text-center space-y-2">
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Sign In</h3>
+                      <p className="text-slate-600 dark:text-slate-400">Enter your credentials to access your apps</p>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="space-y-6">
+                      {/* Username Input */}
+                      <div className="space-y-2">
+                        <Label htmlFor="username" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Username
+                        </Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                          <Input
+                            id="username"
+                            type="text"
+                            placeholder="Enter your username"
+                            value={username}
+                            onChange={handleAuthFormChange(setUsername)}
+                            className="pl-11 h-12 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Password Input */}
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Password
+                        </Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                          <Input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={handleAuthFormChange(setPassword)}
+                            className="pl-11 pr-11 h-12 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Remember Me */}
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Remember me</span>
+                        </label>
+                        <a href="#" className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                          Forgot password?
+                        </a>
+                      </div>
+
+                      {/* Error Message */}
+                      {loginError && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                          {loginError}
+                        </div>
+                      )}
+
+                      {/* Submit Button */}
+                      <Button
+                        type="submit"
+                        disabled={isLoadingLogin}
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-medium rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+                      >
+                        {isLoadingLogin ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Signing in...
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            Sign In
+                            <ArrowRight className="h-5 w-5" />
+                          </div>
+                        )}
+                      </Button>
+                    </form>
+
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-4 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">Or continue with</span>
+                      </div>
+                    </div>
+
+                    {/* Social Login Buttons */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button
+                        variant="outline"
+                        className="h-12 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                      >
+                        <Github className="h-5 w-5 mr-2" />
+                        GitHub
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-12 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                      >
+                        <div className="w-5 h-5 mr-2 flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" className="w-5 h-5">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                          </svg>
+                        </div>
+                        Google
+                      </Button>
+                    </div>
+
+                    {/* Sign Up Link */}
+                    <div className="text-center">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Don&apos;t have an account?{' '}
+                        <a href="#" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+                          Sign up
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={handleAuthFormChange(setPassword)}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              {loginError && <div className="text-red-600 text-sm">{loginError}</div>}
-              <button
-                type="submit"
-                className="w-full px-6 py-3 rounded bg-gray-900 text-white hover:bg-gray-800"
-              >
-                Sign In
-              </button>
-            </form>
+            </div>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto max-w-7xl p-6 space-y-8">
         {/* Enhanced Header */}
         <header className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-lg">
                 <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
                   <rect width="32" height="32" rx="8" fill="#0F172A"/>
                   <path d="M8 12C8 10.8954 8.89543 10 10 10H22C23.1046 10 24 10.8954 24 12V20C24 21.1046 23.1046 22 22 22H10C8.89543 22 8 21.1046 8 20V12Z" fill="#1E293B"/>
@@ -483,7 +670,7 @@ export default function Home() {
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-900/20 dark:to-emerald-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Apps</p>
@@ -492,7 +679,7 @@ export default function Home() {
                 <BarChart3 className="h-8 w-8 text-blue-500 opacity-50" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 dark:text-green-400 font-medium">Live</p>
@@ -501,7 +688,7 @@ export default function Home() {
                 <Zap className="h-8 w-8 text-green-500 opacity-50" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">In Progress</p>
@@ -512,7 +699,7 @@ export default function Home() {
                 <Clock className="h-8 w-8 text-yellow-500 opacity-50" />
               </div>
             </div>
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-sky-50 to-sky-100 dark:from-sky-900/20 dark:to-sky-800/20 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Ideas</p>
@@ -527,7 +714,7 @@ export default function Home() {
           <div className="flex justify-center">
             <Button 
               onClick={handleOpenCreateModal}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+              className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-white px-8 py-3 rounded-lg flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="h-5 w-5" />
               Add New App
@@ -682,7 +869,7 @@ export default function Home() {
                   <p className="text-slate-600 dark:text-slate-400 mb-6">
                     Start by creating your first application to track its progress and manage its lifecycle.
                   </p>
-                  <Button onClick={handleOpenCreateModal} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                  <Button onClick={handleOpenCreateModal} className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First App
                   </Button>
@@ -928,7 +1115,7 @@ export default function Home() {
               </Button>
               <Button 
                 type="submit"
-                className="flex-1 md:flex-none bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                className="flex-1 md:flex-none bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
               >
                 {editingApp ? 'Update Application' : 'Create Application'}
               </Button>

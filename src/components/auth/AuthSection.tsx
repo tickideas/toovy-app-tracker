@@ -49,11 +49,11 @@ export default function AuthSection({ onLogin }: AuthSectionProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-xl">
               <Target className="h-8 w-8 text-white" />
             </div>
           </div>
