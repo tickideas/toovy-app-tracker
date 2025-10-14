@@ -53,6 +53,8 @@ interface AppSummary {
   proposedDomain: string | null;
   githubUrl: string | null;
   description?: string | null;
+  client?: string | null;
+  platform?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,6 +65,8 @@ interface AppFormState {
   proposedDomain: string;
   githubUrl: string;
   status: AppStatus;
+  client: string;
+  platform: string;
 }
 
 interface AppStats {
@@ -94,7 +98,9 @@ const createDefaultFormState = (): AppFormState => ({
   description: '',
   proposedDomain: '',
   githubUrl: '',
-  status: 'PLANNING'
+  status: 'PLANNING',
+  client: '',
+  platform: ''
 });
 
 export default function Home() {
@@ -313,7 +319,9 @@ export default function Home() {
       description: app.description || '',
       proposedDomain: app.proposedDomain || '',
       githubUrl: app.githubUrl || '',
-      status: app.status
+      status: app.status,
+      client: app.client || '',
+      platform: app.platform || ''
     });
     setCreateEditModalOpen(true);
   };
@@ -935,6 +943,18 @@ export default function Home() {
                         <span>Code</span>
                       </a>
                     )}
+                    {app.client && (
+                      <div className="flex items-center gap-1 text-sm text-slate-600">
+                        <User className="h-3 w-3" />
+                        <span className="truncate max-w-[100px]">{app.client}</span>
+                      </div>
+                    )}
+                    {app.platform && (
+                      <div className="flex items-center gap-1 text-sm text-slate-600">
+                        <Zap className="h-3 w-3" />
+                        <span className="truncate max-w-[100px]">{app.platform}</span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Quick Stats */}
@@ -1099,6 +1119,32 @@ export default function Home() {
                   placeholder="https://github.com/user/repo"
                   value={appForm.githubUrl}
                   onChange={handleAppFormChange('githubUrl')}
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="client" className="text-sm font-medium">Client</Label>
+                <Input
+                  id="client"
+                  name="client"
+                  placeholder="Client name (optional)"
+                  value={appForm.client}
+                  onChange={handleAppFormChange('client')}
+                  className="h-11"
+                />
+                <p className="text-xs text-gray-500">Leave empty for company applications</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="platform" className="text-sm font-medium">Deployment Platform</Label>
+                <Input
+                  id="platform"
+                  name="platform"
+                  placeholder="e.g., Vercel, Coolify"
+                  value={appForm.platform}
+                  onChange={handleAppFormChange('platform')}
                   className="h-11"
                 />
               </div>

@@ -36,6 +36,8 @@ const appSchema = z.object({
     }
   }, { message: "Invalid URL" }).optional().nullable(),
   status: z.enum(statuses).default("PLANNING"),
+  client: z.string().optional().nullable(),
+  platform: z.string().optional().nullable(),
 });
 
 function slugify(input: string) {
@@ -114,6 +116,8 @@ export async function POST(request: NextRequest) {
         proposedDomain: data.proposedDomain?.trim() || undefined,
         githubUrl: data.githubUrl?.trim() || undefined,
         status: data.status,
+        client: data.client?.trim() || undefined,
+        platform: data.platform?.trim() || undefined,
         slug,
         ownerId: user.id,
       },

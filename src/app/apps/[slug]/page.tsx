@@ -35,7 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import type { AppStatus, Period, Environment } from '@/generated/prisma';
 import { getStatusBadgeClass } from '@/lib/status';
-import { Rocket, Edit2, Trash2, Plus, Github, ExternalLink, GitBranch, AlertCircle, Lock } from 'lucide-react';
+import { Rocket, Edit2, Trash2, Plus, Github, ExternalLink, GitBranch, AlertCircle, Lock, User } from 'lucide-react';
 import ShareLinkManager from '@/components/share/ShareLinkManager';
 import TaskManager from '@/components/tasks/TaskManager';
 
@@ -93,6 +93,8 @@ interface AppDetails {
   proposedDomain: string | null;
   githubUrl: string | null;
   status: AppStatus;
+  client: string | null;
+  platform: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +105,8 @@ interface AppFormState {
   proposedDomain: string;
   githubUrl: string;
   status: AppStatus;
+  client: string;
+  platform: string;
 }
 
 interface Update {
@@ -181,7 +185,9 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
     description: '',
     proposedDomain: '',
     githubUrl: '',
-    status: 'PLANNING'
+    status: 'PLANNING',
+    client: '',
+    platform: ''
   });
   const [updateForm, setUpdateForm] = useState<UpdateFormState>(createDefaultUpdateForm());
   const [isAddingUpdate, setIsAddingUpdate] = useState(false);
@@ -269,7 +275,9 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
           description: data.description ?? '',
           proposedDomain: data.proposedDomain ?? '',
           githubUrl: data.githubUrl ?? '',
-          status: data.status
+          status: data.status,
+          client: data.client ?? '',
+          platform: data.platform ?? ''
         });
       } else if (response.status === 404) {
         notFound();
@@ -638,6 +646,24 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
                   onChange={handleFormChange('githubUrl')}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="client">Client</Label>
+                <Input
+                  id="client"
+                  placeholder="Client name (optional)"
+                  value={editForm.client}
+                  onChange={handleFormChange('client')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="platform">Deployment Platform</Label>
+                <Input
+                  id="platform"
+                  placeholder="e.g., Vercel, Coolify"
+                  value={editForm.platform}
+                  onChange={handleFormChange('platform')}
+                />
+              </div>
               <div className="space-y-2 col-span-1 md:col-span-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -693,6 +719,18 @@ export default function AppDetail({ params }: { params: Promise<{ slug: string }
                   >
                     GitHub
                   </a>
+                </div>
+              )}
+              {app.client && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700 font-medium">{app.client}</span>
+                </div>
+              )}
+              {app.platform && (
+                <div className="flex items-center gap-2">
+                  <Rocket className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700">{app.platform}</span>
                 </div>
               )}
             </div>

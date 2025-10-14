@@ -64,6 +64,8 @@ model App {
   proposedDomain String?
   githubUrl      String?
   status         AppStatus    @default(PLANNING)
+  client         String?      // Optional: client name, falls back to company's app if not set
+  platform       String?      // Optional: deployment platform (e.g., Vercel, Coolify)
   ownerId        String
   owner          User         @relation(fields: [ownerId], references: [id])
   updates        Update[]
